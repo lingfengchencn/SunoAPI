@@ -4,13 +4,8 @@ from time import time
 from suno.suno import Suno
 
 
-# get cookie from request
-cookie = """
-
-"""
-# get session_id from token request
-session_id = ""
-
+cookie = ""
+session_id =""
 async def main():
     suno = Suno(session_id, cookie)
 
@@ -27,7 +22,6 @@ async def main():
 
     # result = await suno_client.get_lyrics("535f879a-cb9a-45af-af6b-efb3742f319c")
     # print(result.to_json())
-    suno.cl
     
 
     
