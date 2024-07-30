@@ -7,8 +7,8 @@ from urllib.parse import urljoin
 import requests
 
 import aiohttp
-from entities import BillingInfo, Clip, GenMusicRequest, GenMusicResponse, SunoAuthTypeEnum, SunoLyric, SunoToken, SunoUploadAudioKey, SunoUploadAudioStatus, SunoUploadAudioStatusEnum
-from suno_http import SunoCookie
+from .entities import BillingInfo, Clip, GenMusicRequest, GenMusicResponse, SunoAuthTypeEnum, SunoLyric, SunoToken, SunoUploadAudioKey, SunoUploadAudioStatus, SunoUploadAudioStatusEnum
+from .suno_http import SunoCookie
 import logging
 logger = logging.getLogger(__name__)
 

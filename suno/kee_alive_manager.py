@@ -1,6 +1,6 @@
 
 import threading
-from suno_client import SunoClient
+from .suno_client import SunoClient
 
 
 class KeepAliveManager:

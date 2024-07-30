@@ -1,11 +1,11 @@
 
 from hashlib import md5
-from entities import BillingInfo, GenMusicRequest, GenMusicResponse, SunoLyric
-from suno_client import SunoClient
-from kee_alive_manager import KeepAliveManager
+from .entities import BillingInfo, GenMusicRequest, GenMusicResponse, SunoLyric
+from .suno_client import SunoClient
+from .kee_alive_manager import KeepAliveManager
 import logging
 
-from suno_http import SunoCookie
+from .suno_http import SunoCookie
 logging.basicConfig(level=logging.DEBUG,format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 

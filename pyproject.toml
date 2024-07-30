@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "SunoAPI-unofficial"
+version = "0.0.0"
+readme = "README.md"
+description = "一个非官方的suno api实现"
+packages = [
+    {include = "suno"}
+]
+authors = ["krasus <krasus@chen.red>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+aiohttp = "^3.9.5"
+requests = "^2.32.3"
+
+[build-system]
+requires = ["poetry>=1.0.0"]
+build-backend = "poetry.masonry.api"

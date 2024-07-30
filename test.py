@@ -1,7 +1,7 @@
 
 import asyncio
 from time import time
-from suno import Suno
+from suno.suno import Suno
 
 
 # get cookie from request
