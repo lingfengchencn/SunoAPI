@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 COMMON_HEADERS = {
     "Content-Type": "text/plain;charset=UTF-8",
+    # "Content-Type": "application/json; charset=utf-8",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
     "Referer": "https://suno.com",
     "Origin": "https://suno.com",
@@ -43,26 +44,29 @@ class SunoClient:
         
         headers.update(COMMON_HEADERS)
 
-        if data is not None :
+        if data is not None and type(data) is dict:
             data = json.dumps(data)
 
         
-        logger.debug(f"fetch url: {url} data:{data} headers:{headers}")
+        logger.debug(f"fetch url: {url} data:{data} method:{method} headers:{headers} ")
 
         async with aiohttp.ClientSession() as session:
+            
             try:
-                async with session.request(
-                    method=method, url=url, data=data, headers=headers
-                ) as resp:
-                    response = await resp.json()
-                    # {'detail': 'Unauthorized'}
-                    if 'detail' in response and response["detail"] == "Unauthorized":
-                        logger.debug(f"fetch error Unauthorized")
-                        if unauthorized ==  True:
-                            raise Exception("Unauthorized")
-                        self.update_token()
-                        return await self.fetch(url, data=data, auth_type=auth_type, method=method,unauthorized=True)
-                    return await resp.json()
+                if method == "GET":
+                    resp = await session.get(url, headers=headers)
+                else:
+                    resp = await session.post(url, data=data, headers=headers)
+
+                response = await resp.json()
+                # {'detail': 'Unauthorized'}
+                if 'detail' in response and response["detail"] == "Unauthorized":
+                    logger.debug(f"fetch error Unauthorized")
+                    if unauthorized ==  True:
+                        raise Exception("Unauthorized")
+                    self.update_token()
+                    return await self.fetch(url, data=data, auth_type=auth_type, method=method,unauthorized=True)
+                return response
             except Exception as e:
                 logger.error(f"fetch error: {e}")
                 raise e
@@ -93,7 +97,7 @@ class SunoClient:
 
     async def get_feed(self, ids=[]) -> List[Clip]:
         url = urljoin(self.STUDIO_URL, f"feed/v2?ids={','.join(ids)}")
-        response = await self.fetch(url, auth_type=SunoAuthTypeEnum.JWT, method="GET")
+        response = await self.fetch(url, method="GET")
         logger.debug(f"get_feed: {response}")
         return [Clip.from_json(clip) for clip in response.get("clips")]
 
@@ -101,8 +105,26 @@ class SunoClient:
 
     async def gen_music(self, request:GenMusicRequest) -> GenMusicResponse:
         url = urljoin(self.STUDIO_URL, "generate/v2/")
-        response = await self.fetch(url, auth_type=SunoAuthTypeEnum.JWT, data=request.to_json())
+        response = await self.fetch(url,  data=request.to_json())
+        logger.debug(f"gen_music: {response}")
+        # {'detail': [{'type': 'missing', 'loc': ['body', 'params', 'prompt'], 'msg': 'Field required'}]}
+        if "detail" in response:
+            raise Exception(response["detail"])
         return GenMusicResponse.from_json(response)
+    def sync_gen_music(self, request:GenMusicRequest) -> GenMusicResponse:
+        url = urljoin(self.STUDIO_URL, "generate/v2/")
+
+        headers = {"Authorization": f"Bearer {self.suno_cookie.get_token()}"}
+        headers.update(COMMON_HEADERS)
+
+        response = requests.post(url=url, json=request.to_json(),headers=headers)
+        logger.debug(f"gen_music: {response.text}")
+        # {'detail': [{'type': 'missing', 'loc': ['body', 'params', 'prompt'], 'msg': 'Field required'}]}
+        if "detail" in response:
+            raise Exception(response["detail"])
+        response = response.json()
+        return GenMusicResponse.from_json(response)
+    
     async def gen_concat(self,data):
         api = "generate/concat/v2/"
         url = urljoin(self.STUDIO_URL, api)
@@ -113,20 +135,20 @@ class SunoClient:
         # https://studio-api.suno.ai/api/generate/lyrics/
         url = urljoin(self.STUDIO_URL, "generate/lyrics/")
         data = {"prompt": prompt}
-        response = await self.fetch(url, auth_type=SunoAuthTypeEnum.JWT, data=data)
+        response = await self.fetch(url,  data=data)
         return response.get("id")
 
     async def get_lyrics(self, lyrics_id) -> SunoLyric:
         # https://studio-api.suno.ai/api/generate/lyrics/9f479d79-cf46-4da0-ad51-bb482953b870
         url = urljoin(self.STUDIO_URL, f"generate/lyrics/{lyrics_id}")
-        response = await self.fetch(url, auth_type=SunoAuthTypeEnum.JWT, method="GET")
+        response = await self.fetch(url,  method="GET")
         logger.debug(f"get_lyrics: {response}")
         lyrics = SunoLyric.from_json(response)
         return lyrics
 
     async def get_credits(self) -> BillingInfo:
         url = urljoin(self.STUDIO_URL, "billing/info/")
-        response = await self.fetch(url, auth_type=SunoAuthTypeEnum.JWT, method="GET")
+        response = await self.fetch(url, method="GET")
         logger.debug(f"get_credits: {response}")
         billing_info = BillingInfo.from_json(response)
         return billing_info

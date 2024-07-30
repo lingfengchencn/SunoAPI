@@ -212,7 +212,7 @@ class Clip:
 class GenMusicRequest:
     # {"gpt_description_prompt":"创建一首慢摇的DJ","mv":"chirp-v3-5","prompt":"","make_instrumental":false,"user_uploaded_images_b64":[]}
     gpt_description_prompt:str = ""
-    mv:str = ""
+    mv:str = "chirp-v3-5"
     prompt:str = ""
     make_instrumental:bool = False
     user_uploaded_images_b64:List[str] = []
@@ -272,7 +272,7 @@ class GenMusicResponse:
         gen_music_response.metadata = ClipMetaData.from_json(json_data.get("metadata"))
         gen_music_response.major_model_version = json_data.get("major_model_version")
         gen_music_response.status = json_data.get("status")
-        gen_music_response.created_at = datetime.fromisoformat(json_data.get("created_at"))
+        gen_music_response.created_at = datetime.fromisoformat(json_data.get("created_at").replace("Z", "+00:00"))
         gen_music_response.batch_size = json_data.get("batch_size")
         return gen_music_response
     
