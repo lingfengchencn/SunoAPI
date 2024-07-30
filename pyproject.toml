@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "SunoAPI-unofficial"
+name = "Suno"
 version = "0.0.0"
 readme = "README.md"
 description = "一个非官方的suno api实现"
