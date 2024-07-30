@@ -1,4 +1,5 @@
 
+import asyncio
 from hashlib import md5
 from .entities import BillingInfo, GenMusicRequest, GenMusicResponse, SunoLyric
 from .suno_client import SunoClient
@@ -31,32 +32,45 @@ class Suno:
     def stop_keep_alive(self):
         self.keep_alive_manager.stop_keep_alive(self._client_key)
 
-    
-    async def gen_lyrics(self, prompt="") -> str:
-        result = await self.suno_client.gen_lyrics(prompt)
-        return result
-    async def get_lyrics(self, lyrics_id) -> SunoLyric:
-        result = await self.suno_client.get_lyrics(lyrics_id)
+    def _do_sync_call(self,request):
+        loop = asyncio.get_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(request)
         return result
     
-    async def gen_music(self, request:GenMusicRequest) -> GenMusicResponse:
-        result = await self.suno_client.gen_music(request)
+    def gen_lyrics(self, prompt="") -> str:
+        request = self.suno_client.gen_lyrics(prompt)
+        result = self._do_sync_call(request)
         return result
-    async def get_music(self, music_ids = []):
-        result = await self.suno_client.get_feed(music_ids)
+    def get_lyrics(self, lyrics_id) -> SunoLyric:
+        request = self.suno_client.get_lyrics(lyrics_id)
+        result = self._do_sync_call(request)
+        return result
+    
+    def gen_music(self, request:GenMusicRequest) -> GenMusicResponse:
+        request =  self.suno_client.gen_music(request)
+        result = self._do_sync_call(request)
+        return result
+    def get_music(self, music_ids = []):
+        # result = await self.suno_client.get_feed(music_ids)
+        # return result
+        request =  self.suno_client.get_feed(music_ids)
+        result = self._do_sync_call(request)
         return result
     
     # need to test
-    async def gen_concat(self,data):
-        result = await self.suno_client.gen_concat(data)
+    def gen_concat(self,data):
+        request = self.suno_client.gen_concat(data)
+        result = self._do_sync_call(request)
         return result
-
-    async def get_credits(self) -> BillingInfo:
-        result = await self.suno_client.get_credits()
+    def get_credits(self) -> BillingInfo:
+        request = self.suno_client.get_credits()
+        result = self._do_sync_call(request)
         return result
     
-    async def upload_file(self,file_name,file_data, file_ext):
-        result = await self.suno_client.upload_file(file_name,file_data, file_ext)
+    def upload_file(self,file_name,file_data, file_ext):
+        request = self.suno_client.upload_file(file_name,file_data, file_ext)
+        result = self._do_sync_call(request)
         return result
 
 
