@@ -1,4 +1,6 @@
 
+import signal
+import sys
 import threading
 from .suno_client import SunoClient
 
@@ -12,6 +14,17 @@ class KeepAliveManager:
         self.keep_alive_events = {}
         self.instance_counts = {}
 
+        # # Handle signals for graceful shutdown
+        # signal.signal(signal.SIGINT, self._handle_signal)
+        # signal.signal(signal.SIGTERM, self._handle_signal)
+
+    def _handle_signal(self, signum, frame):
+        print(f"KeepAliveManager Signal {signum} received, shutting down keep-alive threads...")
+        shutdown_thread = threading.Thread(target=self._shutdown)
+        shutdown_thread.start()
+    def _shutdown(self):
+        self.stop_all()
+        sys.exit(0)
 
     def start_keep_alive(self, key):
         with self.lock:
@@ -33,7 +46,6 @@ class KeepAliveManager:
                     thread = self.keep_alive_threads.pop(key, None)
                     if event and thread:
                         event.set()
-                        thread.join()
     def stop_all(self):
         with self.lock:
             for key in list(self.keep_alive_threads.keys()):
@@ -41,6 +53,8 @@ class KeepAliveManager:
 
     def keep_alive(self, key, event):
         while not event.is_set():
+            if self.instance_counts[key] <= 0:
+                break
             print(f"Keep-alive thread for {key} is running.")
             self.suno_client.update_token()
             event.wait(self.interval)  # 每10秒检查一次

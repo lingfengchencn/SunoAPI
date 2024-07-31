@@ -84,6 +84,17 @@ class SunoToken:
             "jwt": self.jwt
         }
 
+class ClipStatusEnum(Enum):
+    COMPLETE = "complete"
+    STREAMING = "streaming"
+    
+    def __str__(self) -> str:
+        return super().__str__()
+    @classmethod
+    def from_str(cls, value):
+        for member in cls:
+            if member.value == value:
+                return member
 
 
 class Clip:
@@ -116,7 +127,7 @@ class Clip:
     #         },
     #         "is_liked": false,
     #         "user_id": "38b7cb66-f5fc-454e-9848-4eed02bd62d2",
-    #         "display_name": "RadicalClickTracks019",
+    #         "display_name": "RadicalClickT;racks019",
     #         "handle": "radicalclicktracks019",
     #         "is_handle_updated": false,
     #         "avatar_image_url": "https://cdn1.suno.ai/defaultBlue.webp",
@@ -148,7 +159,7 @@ class Clip:
     is_trashed:bool = False
     reaction:str  = None
     created_at:datetime = ""
-    status:str  = ""
+    status:ClipStatusEnum = None
     title:str  = ""
     play_count:int = 0
     upvote_count:int = 0
@@ -175,7 +186,7 @@ class Clip:
         clip.is_trashed = json_data.get("is_trashed")
         clip.reaction = json_data.get("reaction")
         clip.created_at = datetime.fromisoformat(json_data.get("created_at").replace("Z", "+00:00"))
-        clip.status = json_data.get("status")
+        clip.status = ClipStatusEnum.from_str( json_data.get("status") )
         clip.title = json_data.get("title")
         clip.play_count = json_data.get("play_count")
         clip.upvote_count = json_data.get("upvote_count")
@@ -201,7 +212,7 @@ class Clip:
             "is_trashed": self.is_trashed,
             "reaction": self.reaction,
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S") , # "2024-07-29 04:24:43.070"
-            "status": self.status,
+            "status": self.status.value,
             "title": self.title,
             "play_count": self.play_count,
             "upvote_count": self.upvote_count,

@@ -7,7 +7,6 @@ from .kee_alive_manager import KeepAliveManager
 import logging
 
 from .suno_http import SunoCookie
-logging.basicConfig(level=logging.DEBUG,format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +23,6 @@ class Suno:
         self.keep_alive_manager = KeepAliveManager(self.suno_client)
         # md5 key
         self._client_key = md5(f"{session_id}:{cookie}".encode('utf-8')).hexdigest()
-        logger.debug(f"suno client key : {self._client_key}")
         # self.suno_client.update_token()
         self.keep_alive_manager.start_keep_alive(self._client_key)
 
@@ -33,7 +31,10 @@ class Suno:
         self.keep_alive_manager.stop_keep_alive(self._client_key)
 
     def _do_sync_call(self,request):
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(request)
         return result
