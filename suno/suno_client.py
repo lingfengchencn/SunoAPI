@@ -29,7 +29,7 @@ class SunoClient:
 
 
 
-    CLERK_JS_VERSION = "4.73.4"
+    CLERK_JS_VERSION = "5.14.0"
 
     def __init__(self,suno_cookie:SunoCookie):
         

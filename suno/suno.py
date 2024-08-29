@@ -1,9 +1,10 @@
 
 import asyncio
 from hashlib import md5
+import threading
 from .entities import BillingInfo, GenMusicRequest, GenMusicResponse, SunoLyric
 from .suno_client import SunoClient
-from .kee_alive_manager import KeepAliveManager
+from .keep_alive_manager import KeepAliveManager
 import logging
 
 from .suno_http import SunoCookie
@@ -13,18 +14,40 @@ logger = logging.getLogger(__name__)
 class Suno:
 
     _client_key = "suno_client_key"
-    def __init__(self, session_id, cookie):
-        self.suno_cookie = SunoCookie()
-        self.suno_cookie.set_session_id(session_id)
-        self.suno_cookie.load_cookie(cookie)
-        
-        self.suno_client = SunoClient(self.suno_cookie)
+    _instances = {}
+    _lock = threading.Lock()
 
-        self.keep_alive_manager = KeepAliveManager(self.suno_client)
-        # md5 key
-        self._client_key = md5(f"{session_id}:{cookie}".encode('utf-8')).hexdigest()
-        # self.suno_client.update_token()
-        self.keep_alive_manager.start_keep_alive(self._client_key)
+    def __new__(cls, session_id, cookie, *args, **kwargs):
+        client_key = md5(f"{session_id}:{cookie}".encode('utf-8')).hexdigest()
+        
+        # Check if an instance with this key already exists
+        if client_key not in cls._instances:
+            with cls._lock:
+                # Double-check within the lock to ensure thread safety
+                if client_key not in cls._instances:
+                    cls._instances[client_key] = super().__new__(cls)
+        
+        return cls._instances[client_key]
+
+    def __init__(self, session_id, cookie):
+        # if not hasattr(self, '_initialized'):
+            self.suno_cookie = SunoCookie()
+            self.suno_cookie.set_session_id(session_id)
+            self.suno_cookie.load_cookie(cookie)
+            
+            self.suno_client = SunoClient(self.suno_cookie)
+
+            self.keep_alive_manager = KeepAliveManager(self.suno_client)
+            # md5 key
+            self._client_key = md5(f"{session_id}:{cookie}".encode('utf-8')).hexdigest()
+            # self.suno_client.update_token()
+            self.keep_alive_manager.start_keep_alive(self._client_key)
+            
+            self._initialized = True  # Mark the instance as initialized
+
+    def __del__(self):
+        # Ensure the keep-alive process is stopped when the Suno instance is destroyed
+        self.stop_keep_alive()
 
 
     def stop_keep_alive(self):

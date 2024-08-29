@@ -85,7 +85,9 @@ class SunoToken:
         }
 
 class ClipStatusEnum(Enum):
+    SUBMITTED = "submitted"
     COMPLETE = "complete"
+    QUEUED = "queued"
     STREAMING = "streaming"
     
     def __str__(self) -> str:
