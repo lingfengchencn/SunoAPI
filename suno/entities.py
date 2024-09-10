@@ -89,6 +89,7 @@ class ClipStatusEnum(Enum):
     COMPLETE = "complete"
     QUEUED = "queued"
     STREAMING = "streaming"
+    ERROR = "error"
     
     def __str__(self) -> str:
         return super().__str__()
