@@ -2,7 +2,7 @@
 import signal
 import sys
 import threading
-from .suno_client import SunoClient
+from .suno_service import SunoService
 import logging
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class KeepAliveManager:
         return cls.instance
 
 
-    def __init__(self,suno_client:SunoClient ,  interval:int =30):
+    def __init__(self,suno_client:SunoService ,  interval:int =30):
 
         if not hasattr(self, '_instanced'):
             self.suno_client = suno_client

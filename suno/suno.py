@@ -3,7 +3,7 @@ import asyncio
 from hashlib import md5
 import threading
 from .entities import BillingInfo, GenMusicRequest, GenMusicResponse, SunoLyric
-from .suno_client import SunoClient
+from .suno_service import SunoService
 from .keep_alive_manager import KeepAliveManager
 import logging
 
@@ -35,7 +35,7 @@ class Suno:
             self.suno_cookie.set_session_id(session_id)
             self.suno_cookie.load_cookie(cookie)
             
-            self.suno_client = SunoClient(self.suno_cookie)
+            self.suno_client = SunoService(self.suno_cookie)
 
             self.keep_alive_manager = KeepAliveManager(self.suno_client)
             # md5 key
@@ -63,38 +63,38 @@ class Suno:
         return result
     
     def gen_lyrics(self, prompt="") -> str:
-        request = self.suno_client.gen_lyrics(prompt)
-        result = self._do_sync_call(request)
+        result = self.suno_client.gen_lyrics(prompt)
+        # result = async_to_sync(self.suno_client.gen_lyrics)(prompt)
+        logger.debug(f"gen_lyrics result: {result}")
         return result
     def get_lyrics(self, lyrics_id) -> SunoLyric:
-        request = self.suno_client.get_lyrics(lyrics_id)
-        result = self._do_sync_call(request)
+        result = self.suno_client.get_lyrics(lyrics_id)
+        logger.debug(f"get_lyrics result: {result}")
         return result
     
-    def gen_music(self, request:GenMusicRequest) -> GenMusicResponse:
-        request =  self.suno_client.gen_music(request)
-        result = self._do_sync_call(request)
+    def gen_music(self, request:dict) -> GenMusicResponse:
+        if "tags" in request:
+            request["tags"] = ",".join(request["tags"])
+        if "negative_tags" in request:
+            request["negative_tags"] = ",".join(request["negative_tags"])
+        result =  self.suno_client.gen_music(request)
         return result
     def get_music(self, music_ids = []):
         # result = await self.suno_client.get_feed(music_ids)
         # return result
-        request =  self.suno_client.get_feed(music_ids)
-        result = self._do_sync_call(request)
+        result =  self.suno_client.get_feed(music_ids)
         return result
     
     # need to test
     def gen_concat(self,data):
-        request = self.suno_client.gen_concat(data)
-        result = self._do_sync_call(request)
+        result = self.suno_client.gen_concat(data)
         return result
     def get_credits(self) -> BillingInfo:
-        request = self.suno_client.get_credits()
-        result = self._do_sync_call(request)
+        result = self.suno_client.get_credits()
         return result
     
     def upload_file(self,file_name,file_data, file_ext):
-        request = self.suno_client.upload_file(file_name,file_data, file_ext)
-        result = self._do_sync_call(request)
+        result = self.suno_client.upload_file(file_name,file_data, file_ext)
         return result
 
 

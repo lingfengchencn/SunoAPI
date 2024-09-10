@@ -1,0 +1,9 @@
+.venv/
+docker/volumes/
+docker/.env
+.env
+.gitignore
+.gitmodules
+.git/
+.idea/
+.vscode/

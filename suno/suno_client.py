@@ -1,248 +1,224 @@
 
-import asyncio
-import json
-from typing import List, Optional
+import random
+import time
 from urllib.parse import urljoin
 
+from jinja2 import Template
 import requests
-
-import aiohttp
-from .entities import BillingInfo, Clip, GenMusicRequest, GenMusicResponse, SunoAuthTypeEnum, SunoLyric, SunoToken, SunoUploadAudioKey, SunoUploadAudioStatus, SunoUploadAudioStatusEnum
-from .suno_http import SunoCookie
+from .entities import ClipStatusEnum
 import logging
 logger = logging.getLogger(__name__)
 
-COMMON_HEADERS = {
-    "Content-Type": "text/plain;charset=UTF-8",
-    # "Content-Type": "application/json; charset=utf-8",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-    "Referer": "https://suno.com",
-    "Origin": "https://suno.com",
-}
+class Lyrics:
+    id:str
+    title:str
+    text:str
+    status:str
 
+    def to_dict(self):
+        return {
+            "id":self.id,
+            "title":self.title,
+            "text":self.text,
+            "status":self.status
+        }
+class Music:
+    id: str
+    title: str
+    video_url: str
+    audio_url: str
+    image_url: str
+    image_large_url: str
+    is_video_pending:bool = False
+    major_model_version:str = "v3"
+    model_name:str = "chirp-v3"
+    metadata: dict = {}
+    is_liked:bool = False
+    display_name: str 
+    status: ClipStatusEnum
+    created_at:str
 
+    @classmethod
+    def from_clip(cls, clip) -> 'Music':
+        music = Music()
+        music.id = clip["id"]
+        music.title = clip["title"]
+        music.video_url = clip["video_url"]
+        music.audio_url = clip["audio_url"]
+        music.image_url = clip["image_url"]
+        music.image_large_url = clip["image_large_url"]
+        music.is_video_pending = clip["is_video_pending"]
+        music.major_model_version = clip["major_model_version"]
+        music.model_name = clip["model_name"]
+        music.metadata = clip["metadata"]
+        music.is_liked = clip["is_liked"]
+        music.display_name = clip["display_name"]
+        music.status = ClipStatusEnum.from_str(clip["status"])
+        music.created_at = clip["created_at"]
+        return music
+
+    def to_dict(self):
+        return {
+            "id":self.id,
+            "title":self.title,
+            "video_url":self.video_url,
+            "audio_url":self.audio_url,
+            "image_url":self.image_url,
+            "image_large_url":self.image_large_url,
+            "is_video_pending":self.is_video_pending,
+            "major_model_version":self.major_model_version,
+            "model_name":self.model_name,
+            "metadata":self.metadata,
+            "is_liked":self.is_liked,
+            "display_name":self.display_name,
+            "status":self.status.value,
+            "created_at":self.created_at
+        }
 
 class SunoClient:
-    BASE_URL = "https://studio-api.suno.ai"  # 示例基础 URL，需要替换为实际值
-    STUDIO_URL = "https://studio-api.suno.ai/api/"
-    CLERK_URL = "https://clerk.suno.com"
+
+    API_GEN_LYRICS = "gen_lyrics"
+    API_GET_LYRICS = "get_lyrics/{{lyrics_id}}"
 
 
+    API_GEN_MUSIC_BY_LYRICS = "gen_music_by_lyrics"
+    API_GEN_MUSIC_BY_PROMPT = "gen_music_gpt"
+    API_GET_MUSIC = "get_music"
 
-    CLERK_JS_VERSION = "5.14.0"
-
-    def __init__(self,suno_cookie:SunoCookie):
-        
-        self.suno_cookie = suno_cookie
-
-
-    async def fetch(self, url,  data=None, auth_type:Optional[ SunoAuthTypeEnum] =SunoAuthTypeEnum.JWT,method="POST",unauthorized = False):
-        if auth_type == SunoAuthTypeEnum.COOKIE: # 好像只有获取token需要用到
-            headers = {"cookie": self.suno_cookie.get_cookie()}
-        elif auth_type == SunoAuthTypeEnum.JWT:
-            headers = {"Authorization": f"Bearer {self.suno_cookie.get_token()}"}
-        
-        headers.update(COMMON_HEADERS)
-
-        if data is not None and type(data) is dict:
-            data = json.dumps(data)
-
-        
-        logger.debug(f"fetch url: {url} data:{data} method:{method} headers:{headers} ")
-
-        async with aiohttp.ClientSession() as session:
-            
-            try:
-                if method == "GET":
-                    resp = await session.get(url, headers=headers)
+    def fetch(self, url,  data=None,method="POST"):
+        for _ in range(30):    
+            try :
+                if method == "POST":
+                    response = requests.post(url,json=data)
                 else:
-                    resp = await session.post(url, data=data, headers=headers)
-
-                response = await resp.json()
-                # {'detail': 'Unauthorized'}
-                if 'detail' in response and response["detail"] == "Unauthorized":
-                    logger.debug(f"fetch error Unauthorized")
-                    if unauthorized ==  True:
-                        raise Exception("Unauthorized")
-                    self.update_token()
-                    return await self.fetch(url, data=data, auth_type=auth_type, method=method,unauthorized=True)
+                    response = requests.get(url)
+                response.raise_for_status()
+                
                 return response
-            except Exception as e:
-                logger.error(f"fetch error: {e}")
-                raise e
-
-    def update_token(self) -> SunoToken:
-        session_id = self.suno_cookie.get_session_id()
-        api = f"/v1/client/sessions/{session_id}/tokens?_clerk_js_version={self.CLERK_JS_VERSION}"
-        url= urljoin(self.CLERK_URL, api)
-        
-        headers = {"cookie": self.suno_cookie.get_cookie(),
-                   "Content-Type":"application/x-www-form-urlencoded"}
-        headers.update(COMMON_HEADERS)
-        response = requests.post(url, headers=headers)
-        response.raise_for_status()
-        resp_headers = dict(response.headers)
-        set_cookie = resp_headers.get("Set-Cookie")
-        self.suno_cookie.load_cookie(set_cookie)
-        data = response.json()
-        token = data.get("jwt")
-        self.suno_cookie.set_token(token)
-
-        logger.debug(f"update_token: {token}")
-
-        return SunoToken.from_json(data)
-
-
-
-
-    async def get_feed(self, ids=[]) -> List[Clip]:
-        url = urljoin(self.STUDIO_URL, f"feed/v2?ids={','.join(ids)}")
-        response = await self.fetch(url, method="GET")
-        logger.debug(f"get_feed: {response}")
-        return [Clip.from_json(clip) for clip in response.get("clips")]
-
-
-
-    async def gen_music(self, request:GenMusicRequest) -> GenMusicResponse:
-        url = urljoin(self.STUDIO_URL, "generate/v2/")
-        response = await self.fetch(url,  data=request.to_json())
-        logger.debug(f"gen_music: {response}")
-        # {'detail': [{'type': 'missing', 'loc': ['body', 'params', 'prompt'], 'msg': 'Field required'}]}
-        if "detail" in response:
-            raise Exception(response["detail"])
-        return GenMusicResponse.from_json(response)
-    def sync_gen_music(self, request:GenMusicRequest) -> GenMusicResponse:
-        url = urljoin(self.STUDIO_URL, "generate/v2/")
-
-        headers = {"Authorization": f"Bearer {self.suno_cookie.get_token()}"}
-        headers.update(COMMON_HEADERS)
-
-        response = requests.post(url=url, json=request.to_json(),headers=headers)
-        logger.debug(f"gen_music: {response.text}")
-        # {'detail': [{'type': 'missing', 'loc': ['body', 'params', 'prompt'], 'msg': 'Field required'}]}
-        if "detail" in response:
-            raise Exception(response["detail"])
-        response = response.json()
-        return GenMusicResponse.from_json(response)
-    
-    async def gen_concat(self,data):
-        api = "generate/concat/v2/"
-        url = urljoin(self.STUDIO_URL, api)
-        response = await self.fetch(url, data)
-        return response
-
-    async def gen_lyrics(self, prompt="") -> str:
-        # https://studio-api.suno.ai/api/generate/lyrics/
-        url = urljoin(self.STUDIO_URL, "generate/lyrics/")
-        data = {"prompt": prompt}
-        response = await self.fetch(url,  data=data)
-        return response.get("id")
-
-    async def get_lyrics(self, lyrics_id) -> SunoLyric:
-        # https://studio-api.suno.ai/api/generate/lyrics/9f479d79-cf46-4da0-ad51-bb482953b870
-        url = urljoin(self.STUDIO_URL, f"generate/lyrics/{lyrics_id}")
-        response = await self.fetch(url,  method="GET")
-        logger.debug(f"get_lyrics: {response}")
-        lyrics = SunoLyric.from_json(response)
-        return lyrics
-
-    async def get_credits(self) -> BillingInfo:
-        url = urljoin(self.STUDIO_URL, "billing/info/")
-        response = await self.fetch(url, method="GET")
-        logger.debug(f"get_credits: {response}")
-        billing_info = BillingInfo.from_json(response)
-        return billing_info
-    
-    async def get_storage_key(self,file_ext) -> SunoUploadAudioKey:
-        #  https://studio-api.suno.ai/api/uploads/audio/
-        api = "uploads/audio/"
-        url = urljoin(self.STUDIO_URL, api)
-        data = {"extension":file_ext}
-        response = await self.fetch(url,  data=data)
-        logger.debug(f"get_storage_key: {response}")
-        key = SunoUploadAudioKey.from_json(response)
-        return key
-
-    async def upload_file(self,file_name,file_data, file_ext):
-        # https://suno-uploads.s3.amazonaws.com/
-        # Content-Type:multipart/form-data; boundary=----WebKitFormBoundarydl5HFaWNoeUnwoFn
-        # ------WebKitFormBoundarydl5HFaWNoeUnwoFn
-        # Content-Disposition: form-data; name="Content-Type"
-
-        # audio/wav
-        # ------WebKitFormBoundarydl5HFaWNoeUnwoFn
-        # Content-Disposition: form-data; name="key"
-
-        # raw_uploads/5d03b3ba-cd9e-42cf-ae5b-cf15b3b24841.wav
-        # ------WebKitFormBoundarydl5HFaWNoeUnwoFn
-        # Content-Disposition: form-data; name="AWSAccessKeyId"
-
-        # AKIA2V4GXGDKJMTPWLXO
-        # ------WebKitFormBoundarydl5HFaWNoeUnwoFn
-        # Content-Disposition: form-data; name="policy"
-
-        # eyJleHBpcmF0aW9uIjogIjIwMjQtMDctMjlUMTA6MTc6NTNaIiwgImNvbmRpdGlvbnMiOiBbWyJjb250ZW50LWxlbmd0aC1yYW5nZSIsIDAsIDEwNDg1NzYwMF0sIFsic3RhcnRzLXdpdGgiLCAiJENvbnRlbnQtVHlwZSIsICJhdWRpby93YXYiXSwgeyJidWNrZXQiOiAic3Vuby11cGxvYWRzIn0sIHsia2V5IjogInJhd191cGxvYWRzLzVkMDNiM2JhLWNkOWUtNDJjZi1hZTViLWNmMTViM2IyNDg0MS53YXYifV19
-        # ------WebKitFormBoundarydl5HFaWNoeUnwoFn
-        # Content-Disposition: form-data; name="signature"
-
-        # wB1bZvq7YkZWENfDKNZb7dBIqsg=
-        # ------WebKitFormBoundarydl5HFaWNoeUnwoFn
-        # Content-Disposition: form-data; name="file"; filename="y2282.wav"
-        # Content-Type: audio/wav
-
-        # RIFFFcWAVEfmt À]wLISTINFOISFTLavf58.76.100datacShow more
-
-        key = await self.get_storage_key(file_ext)
-        fields = key.fields
-        data = {
-            "Content-Type": fields.content_type,
-            "key": fields.key,
-            "AWSAccessKeyId": fields.AWSAccessKeyId,
-            "policy": fields.policy,
-            "signature": fields.signature,
-        }
-        form_data = aiohttp.FormData(data)
-        form_data.add_field("file", file_data, filename=file_name, content_type=f"audio/{file_ext}")
-        # 使用form post
-        async with aiohttp.ClientSession() as session:
-            async with session.post(key.url, data=form_data) as response:
-                # 判断 code == 204
-                if response.status == 204:
-                    await self.upload_finish(file_name,key.id)
-
-                    while True: # 获取上传状态
-                        upload_status = await self.get_upload_status(key.id)
-                        if upload_status.status == SunoUploadAudioStatusEnum.complete:
-                            break
-                        if upload_status.status == SunoUploadAudioStatusEnum.error:
-                            raise Exception(f"upload error: {upload_status.error_message}")
-                        await asyncio.sleep(3)
-                    await self.initialize_clip(key.id)
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 429:
+                    logger.warning("429 Too Many Requests")
+                    time.sleep(random.randint(1, 5))
+                    continue
                 else:
-                    raise Exception(f"upload error: {response.status} text: {await response.text()}")
+                    raise e
 
+    def __init__(self,base_url:str):
+        self.base_url = base_url + "/"
 
+    def gen_lyrics(self, prompt:str) -> Lyrics:
+        url = urljoin(self.base_url,self.API_GEN_LYRICS)
+        data  = {
+            "prompt":prompt
+        }
+        response = self.fetch(url,data=data)
+        lyrics_id = response.json()["lyrics_id"]
+        lyrics = Lyrics()
+        lyrics.id = lyrics_id
+        return lyrics
+    
+    def get_lyrics(self, lyrics_id:str) -> Lyrics:
+        url = urljoin(self.base_url,self.API_GET_LYRICS)
+        template = Template(url)
+        final_url = template.render(lyrics_id=lyrics_id)
+        
+        # http://127.0.0.1:8000/api/v1/get_lyrics/24c4d2f1-a290-4e44-861e-150bbee08c83
 
-    async def upload_finish(self, file_name, file_id):
-        # https://studio-api.suno.ai/api/uploads/audio/5d03b3ba-cd9e-42cf-ae5b-cf15b3b24841/upload-finish/
-        # {"upload_type":"file_upload","upload_filename":"y2282.wav"}
-        api = f"uploads/audio/{file_id}/upload-finish/"
-        url = urljoin(self.STUDIO_URL, api)
-        data = {"upload_type": "file_upload", "upload_filename": file_name}
-        return await self.fetch(url, data=data)
+        response = self.fetch(final_url,method="GET")
+        
+        data = response.json()["lyrics"]
+        lyrics = Lyrics()
+        lyrics.id = lyrics_id
+        lyrics.title = data.get("title","")
+        lyrics.text = data.get("text","")
+        lyrics.status = data.get("status","")
+        return lyrics
+    
+    def gen_music_by_lyrics(self, title:str="",
+                            lyrics:str="",
+                            generation_type:str="TEXT",
+                            tags:list=[],
+                            negative_tags:list=[],
+                            continue_clip_id:str="",
+                            continue_at:int=None,
+                            infill_start_s:int=None,
+                            infill_end_s:int=None,
+                            task:str=None,
+                            mv:str="chirp-v3-5"
+                            ) -> list[Music]:
+        url = urljoin(self.base_url,self.API_GEN_MUSIC_BY_LYRICS)
+        joined_string = ','.join(tags)
+        if len(joined_string) > 120:
+            raise ValueError('The length of the comma-separated tags string must be less than 120 characters')
+        if len(title) > 80:
+            raise ValueError('The length of the title string must be less than 80 characters')
+        if len(lyrics) > 3000:
+            raise ValueError('The length of the prompt string must be less than 3000 characters')
+        
+    
+        
+        if not (lyrics or (tags and len(tags) > 0)):
+            raise ValueError('At least one of `lyrics` or `tags` must be provided.')
 
-    async def get_upload_status(self, file_id):
-        # https://studio-api.suno.ai/api/uploads/audio/5d03b3ba-cd9e-42cf-ae5b-cf15b3b24841/
-        api = f"uploads/audio/{file_id}/"
-        url = urljoin(self.STUDIO_URL, api)
-        response = await self.fetch(url, method="GET")
-        upload_status = SunoUploadAudioStatus.from_json(response)
-        return upload_status
-    # https://studio-api.suno.ai/api/uploads/audio/5d03b3ba-cd9e-42cf-ae5b-cf15b3b24841/initialize-clip/
-    async def initialize_clip(self, file_id):
-        api = f"uploads/audio/{file_id}/initialize-clip/"
-        url = urljoin(self.STUDIO_URL, api)
-        response = await self.fetch(url, method="POST")
-        return response.get("clip_id")
+        data = {
+            "title":title,
+            "prompt":lyrics,
+            "generation_type":generation_type,
+            "tags":tags,
+            "negative_tags":negative_tags,
+            "mv":mv,
+            "continue_clip_id":continue_clip_id,
+            "continue_at":continue_at,
+            "infill_start_s":infill_start_s,
+            "infill_end_s":infill_end_s,
+            "task":task
+        }
+        response = self.fetch(url,data=data)
+        clips = response.json()["clips"]
+        music_list = []
+        for clip in clips:
+            music = Music.from_clip(clip)
+            music_list.append(music)
+        return music_list
 
+    def gen_music_by_prompt(self, gpt_description_prompt:str="",
+                            prompt:str="",
+                            mv:str = "chirp-v3-5",
+                            make_instrumental:bool=False, # 是否是乐器
+                            user_uploaded_images_b64:list=[]
+    ) -> list[Music]:
+        # {
+        #   "gpt_description_prompt": "string",
+        #   "prompt": "string",
+        #   "mv": "string",
+        #   "make_instrumental": true,
+        #   "user_uploaded_images_b64": [
+        #     "string"
+        #   ]
+        # }
+        url = urljoin(self.base_url,self.API_GEN_MUSIC_BY_PROMPT)
+        data = {
+            "gpt_description_prompt":gpt_description_prompt,
+            "prompt":prompt,
+            "mv":mv,
+            "make_instrumental":make_instrumental,
+            "user_uploaded_images_b64":user_uploaded_images_b64
+        }
+        response = self.fetch(url,data=data)
+        response.raise_for_status()
+        clips = response.json()["clips"]
+        music_list = []
+        for clip in clips:
+            music = Music.from_clip(clip)
+            music_list.append(music)
+        return music_list
 
+    def get_music_list(self,music_ids:list) -> list[Music]:
+        url = urljoin(self.base_url,self.API_GET_MUSIC)
+        data = {
+            "music_ids":music_ids
+        }
+        response = self.fetch(url,data=data)
+        response.raise_for_status()
+        clips = response.json()["clips"]
+        return [Music.from_clip(clip) for clip in clips]

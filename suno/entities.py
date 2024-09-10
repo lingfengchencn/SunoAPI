@@ -221,14 +221,65 @@ class Clip:
             "is_public": self.is_public
 
         }
-
 class GenMusicRequest:
-    # {"gpt_description_prompt":"创建一首慢摇的DJ","mv":"chirp-v3-5","prompt":"","make_instrumental":false,"user_uploaded_images_b64":[]}
-    gpt_description_prompt:str = ""
     mv:str = "chirp-v3-5"
     prompt:str = ""
+
+class LyricsGenMusicRequest(GenMusicRequest):
+    # {"prompt":"风吹","generation_type":"TEXT","tags":"deep techno","negative_tags":"","mv":"chirp-v3-5","title":"对伐",
+    # "continue_clip_id":null,"continue_at":null,"infill_start_s":null,"infill_end_s":null,"task":""}
+    generation_type:str = "TEXT"
+    tags:list = []
+    negative_tags:list = []
+    title:str = ""
+    continue_clip_id:str = None
+    continue_at:int = None
+    infill_start_s:int = None
+    infill_end_s:int = None
+    task:str = ""
+
+    def __init__(self, prompt:str="", generation_type:str="TEXT", tags:list=[], negative_tags:list=[], mv:str="chirp-v3-5", title:str="",
+                 continue_clip_id:str=None, continue_at:int=None, infill_start_s:int=None, infill_end_s:int=None, task:str=""):
+        self.prompt= prompt
+        self.generation_type = generation_type
+        self.tags = tags
+        self.negative_tags = negative_tags
+        self.mv = mv
+        self.title = title
+        self.continue_clip_id = continue_clip_id
+        self.continue_at = continue_at
+        self.infill_start_s = infill_start_s
+        self.infill_end_s = infill_end_s
+        self.task = task
+        
+
+    def to_json(self):
+        return {
+            "prompt": self.prompt,
+            "generation_type": self.generation_type,
+            "tags": ",".join( self.tags),
+            "negative_tags": ",".join(self.negative_tags),
+            "mv": self.mv,
+            "title": self.title,
+            "continue_clip_id": self.continue_clip_id,
+            "continue_at": self.continue_at,
+            "infill_start_s": self.infill_start_s,
+            "infill_end_s": self.infill_end_s,
+            "task": self.task
+        }
+
+class GptGenMusicRequest(GenMusicRequest):
+    # {"gpt_description_prompt":"创建一首慢摇的DJ","mv":"chirp-v3-5","prompt":"","make_instrumental":false,"user_uploaded_images_b64":[]}
+    gpt_description_prompt:str = ""
     make_instrumental:bool = False
     user_uploaded_images_b64:List[str] = []
+
+    def __init__(self, gpt_description_prompt:str="", mv:str="chirp-v3-5", prompt:str="", make_instrumental:bool=False, user_uploaded_images_b64:List[str]=[]):
+        self.gpt_description_prompt = gpt_description_prompt
+        self.mv = mv
+        self.prompt = prompt
+        self.make_instrumental = make_instrumental
+        self.user_uploaded_images_b64 = user_uploaded_images_b64
     def to_json(self):
         return {
             "gpt_description_prompt": self.gpt_description_prompt,
@@ -603,3 +654,4 @@ class SunoLyric:
             "title": self.title,
             "status": str(self.status)
         }
+    
