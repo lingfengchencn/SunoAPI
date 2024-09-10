@@ -4,7 +4,7 @@ from extentions.ext_app import app
 from requests.exceptions import HTTPError
 
 from request_model import GenLyricsRequest
-from suno.exceptions import ServiceUnavailableException , TooManyRequestsException
+from suno.exceptions import NotFoundException, ServiceUnavailableException , TooManyRequestsException
 router = APIRouter()
 
 
@@ -21,7 +21,7 @@ async def gen_lyrics(request: GenLyricsRequest):
 
 
 @router.get("/get_lyrics/{lyrics_id}")
-async def gen_lyrics(lyrics_id:str):
+async def get_lyrics(lyrics_id:str):
     client = app.state.suno
     try:
         lyrics = client.get_lyrics(lyrics_id)
@@ -29,5 +29,5 @@ async def gen_lyrics(lyrics_id:str):
     except HTTPError as e:
         # 如果为404 说明 id不存在
         if e.response.status_code == 404:
-            return {"error": "lyrics id is invalid or expired"}
+            raise NotFoundException("lyrics id is invalid or expired")
     return {"lyrics": lyrics.to_json()}

@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from uuid import uuid4
 import logging
 
-from suno.exceptions import ServiceUnavailableException, TooManyRequestsException
+from suno.exceptions import NotFoundException, ServiceUnavailableException, TooManyRequestsException
 
 logger = logging.getLogger(__name__)
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -38,6 +38,11 @@ class ResponseExceptionMiddleware(BaseHTTPMiddleware):
                                      "code":503
                                      })
             return Response(content=content, status_code=503)
+        except NotFoundException as e:
+            content = json.dumps({"message":str(e),
+                                     "code":404
+                                     })
+            return Response(content=content, status_code=404)
         except Exception as e:
             logger.error(e)
             content = json.dumps({"message":str(e),

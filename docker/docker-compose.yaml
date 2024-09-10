@@ -3,7 +3,7 @@ services:
     build: 
       context: ../
       dockerfile: Dockerfile
-    image: sunoapi:5.20.0
+    image: sunoapi:5.20.0_fix2
     command: tail -f /dev/null
     environment:
       TZ: Asia/Shanghai
