@@ -13,7 +13,16 @@ see test.py
 
 
 # how to use
+## api
 read api doc [SunoAPI](https://apifox.com/apidoc/shared-6611679a-5d3e-4939-b0a4-12086a0e52c6)
+
+## suno client
+```python
+client = SunoClient(base_url="http://127.0.0.1:8000")
+client.gen_lyrics(prompt="prompt")
+
+```
+
 
 ## run local
 0. config `.env` in base dir 
