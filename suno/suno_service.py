@@ -197,7 +197,7 @@ class SunoService:
         logger.debug(f"get_lyrics: {response}")
         lyrics = SunoLyric.from_json(response)
         return lyrics
-
+    
     def get_credits(self) -> BillingInfo:
         url = urljoin(self.STUDIO_URL, "billing/info/")
         response = self.fetch(url, method="GET")

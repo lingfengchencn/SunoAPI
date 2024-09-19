@@ -627,7 +627,7 @@ class SunoLyricGenerageStatusEnum(Enum):
     def __str__(self):
         return self.value
     @classmethod
-    def from_str(cls, value):
+    def value_of(cls, value):
         for member in cls:
             if member.value == value:
                 return member
@@ -647,12 +647,12 @@ class SunoLyric:
         lyric = SunoLyric()
         lyric.text = json_data.get("text")
         lyric.title = json_data.get("title")
-        lyric.status = SunoLyricGenerageStatusEnum.from_str(json_data.get("status"))
+        lyric.status = SunoLyricGenerageStatusEnum.value_of(json_data.get("status"))
         return lyric
     def to_json(self):
         return {
             "text": self.text,
             "title": self.title,
-            "status": str(self.status)
+            "status": self.status.value
         }
     

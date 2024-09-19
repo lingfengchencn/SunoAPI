@@ -2,7 +2,7 @@
 import asyncio
 from hashlib import md5
 import threading
-from .entities import BillingInfo, GenMusicRequest, GenMusicResponse, SunoLyric
+from .entities import BillingInfo, ClipStatusEnum, GenMusicRequest, GenMusicResponse, SunoLyric
 from .suno_service import SunoService
 from .keep_alive_manager import KeepAliveManager
 import logging
@@ -16,6 +16,7 @@ class Suno:
     _client_key = "suno_client_key"
     _instances = {}
     _lock = threading.Lock()
+    _processing_music_ids = []
 
     def __new__(cls, session_id, cookie, *args, **kwargs):
         client_key = md5(f"{session_id}:{cookie}".encode('utf-8')).hexdigest()
@@ -78,11 +79,18 @@ class Suno:
         if "negative_tags" in request:
             request["negative_tags"] = ",".join(request["negative_tags"])
         result =  self.suno_client.gen_music(request)
+        self._processing_music_ids.append(result.id)
         return result
     def get_music(self, music_ids = []):
         # result = await self.suno_client.get_feed(music_ids)
         # return result
+        if len(music_ids) == 0:
+            music_ids = self._processing_music_ids
         result =  self.suno_client.get_feed(music_ids)
+        for clip in result:
+            if clip.status == ClipStatusEnum.COMPLETE or clip.status == ClipStatusEnum.ERROR:
+                if clip.id in self._processing_music_ids:
+                    self._processing_music_ids.remove(clip.id)
         return result
     
     # need to test

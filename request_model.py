@@ -4,6 +4,11 @@ from pydantic import BaseModel, Field, field_validator, model_validator, FieldVa
 class GenLyricsRequest(BaseModel):
     prompt: str
 
+    def to_dict(self):
+        return {
+            "prompt": self.prompt
+        }
+
 class GenLyricsMusicRequest(BaseModel):
     title: Optional[str] = Field(default="", max_length=80)
     prompt: Optional[str] = Field(default="", max_length=3000)
@@ -44,6 +49,22 @@ class GenLyricsMusicRequest(BaseModel):
         
         return values
     
+    def to_dict(self):
+        return {
+            "prompt": self.prompt,
+            "generation_type": self.generation_type,
+            "tags": self.tags,
+            "negative_tags": self.negative_tags,
+            "mv": self.mv,
+            "title": self.title,
+            "continue_clip_id": self.continue_clip_id,
+            "continue_at": self.continue_at,
+            "infill_start_s": self.infill_start_s,
+            "infill_end_s": self.infill_end_s,
+            "task": self.task
+        }
+
+    
 class GenGPTMusicRequest(BaseModel):
     # {"gpt_description_prompt":"aha","mv":"chirp-v3-5","prompt":"","make_instrumental":false,"user_uploaded_images_b64":[],"generation_type":"TEXT"}
     mv:str = "chirp-v3-5"
@@ -51,6 +72,15 @@ class GenGPTMusicRequest(BaseModel):
     gpt_description_prompt:str = Field( max_length=200)
     make_instrumental:bool = False # 是否乐器
     user_uploaded_images_b64:List[str] = []
+
+    def to_dict(self ):
+        return {
+            "gpt_description_prompt": self.gpt_description_prompt,
+            "mv": self.mv,
+            "prompt": self.prompt,
+            "make_instrumental": self.make_instrumental,
+            "user_uploaded_images_b64": self.user_uploaded_images_b64
+        }
 
 class GetMusicRequest(BaseModel):
     music_ids: List[str] 

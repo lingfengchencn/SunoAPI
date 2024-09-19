@@ -107,11 +107,22 @@ class LoggingConfig(BaseSettings):
         default=1*1024*1024*1024,
     )
 
+class DatabaseConfig(BaseSettings):
+    """
+    Database configs
+    """
+    DB_URL: str = Field(
+        description='database url',
+        default='',
+    )
+
+
 class SunoConfig(
     PackagingInfo,
     DeploymentConfig,
     SunoClientConfig,
-    LoggingConfig
+    LoggingConfig,
+    DatabaseConfig
 ):
     model_config = SettingsConfigDict(
         # read from dotenv format config file

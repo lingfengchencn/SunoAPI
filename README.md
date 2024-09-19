@@ -64,3 +64,12 @@ docker compose up -d
 [] 音乐文件上传
 [] 实现自动状态管理
 [] 实现...(看到别的api有，但是每测，不知道咋写)
+
+# db
+
+```
+alembic init alembic
+alembic revision --autogenerate -m "添加suno job 表"
+alembic upgrade head
+
+```
