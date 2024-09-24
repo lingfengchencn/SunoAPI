@@ -45,6 +45,10 @@ class SunoClientConfig(BaseSettings):
     """
     Suno client configs
     """
+    SUNO_ACCOUNT: str = Field(
+        description='suno account',
+        default='',
+    )
     SESSION_ID: str = Field(
         description='session id',
         default='',
@@ -52,6 +56,10 @@ class SunoClientConfig(BaseSettings):
     COOKIE: str = Field(
         description='suno cookie',
         default='',
+    )
+    SUNO_MAX_RUNNING_JOBS: int = Field(
+        description='max running jobs',
+        default=10,
     )
 class LoggerColor:
     # ANSI 转义序列，用于颜色和样式
@@ -116,13 +124,96 @@ class DatabaseConfig(BaseSettings):
         default='',
     )
 
+class RabbitMQSettings(BaseSettings):
+    """
+    RabbitMQ Configuration Settings
+    """
+    RABBITMQ_CONSUME_HOST: str = Field(
+        description='RabbitMQ server IP or hostname',
+        default='localhost'
+    )
+    RABBITMQ_CONSUME_PORT: int = Field(
+        description='RabbitMQ server port',
+        default=5672
+    )
+    RABBITMQ_CONSUME_USERNAME: str = Field(
+        description='Username to authenticate with RabbitMQ server',
+        default='guest'
+    )
+    RABBITMQ_CONSUME_PASSWORD: str = Field(
+        description='Password to authenticate with RabbitMQ server',
+        default='guest'
+    )
+    RABBITMQ_CONSUME_QUEUE: str = Field(
+        description='RabbitMQ queue name',
+        default='default_queue'
+    )
+    RABBITMQ_CONSUME_DURABLE: bool =  Field(
+        description='RabbitMQ durable',
+        default=True
+    )
+
+
+    RABBITMQ_PUBLIC_HOST: str = Field(
+        description='RabbitMQ server IP or hostname',
+        default='localhost'
+    )
+    RABBITMQ_PUBLIC_PORT: int = Field(
+        description='RabbitMQ server port',
+        default=5672
+    )
+    RABBITMQ_PUBLIC_USERNAME: str = Field(
+        description='Username to authenticate with RabbitMQ server',
+        default='guest'
+    )
+    RABBITMQ_PUBLIC_PASSWORD: str = Field(
+        description='Password to authenticate with RabbitMQ server',
+        default='guest'
+    )
+    RABBITMQ_PUBLIC_QUEUE: str = Field(
+        description='RabbitMQ queue name',
+        default='default_queue'
+    )
+    RABBITMQ_PUBLIC_DURABLE: bool =  Field(
+        description='RabbitMQ durable',
+        default=True
+    )
+
+
+    ## --------- RABBIT MQ ----------
+    RABBITMQ_PUBLIC_MUSIC_HOST: str = Field(
+        description='RabbitMQ server IP or hostname',
+        default='localhost'
+    )
+    RABBITMQ_PUBLIC_MUSIC_PORT: int = Field(
+        description='RabbitMQ server port',
+        default=5672
+    )
+    RABBITMQ_PUBLIC_MUSIC_USERNAME: str = Field(
+        description='Username to authenticate with RabbitMQ server',
+        default='guest'
+    )
+    RABBITMQ_PUBLIC_MUSIC_PASSWORD: str = Field(
+        description='Password to authenticate with RabbitMQ server',
+        default='guest'
+    )
+    RABBITMQ_PUBLIC_MUSIC_QUEUE: str = Field(
+        description='RabbitMQ queue name',
+        default='default_queue'
+    )
+    RABBITMQ_PUBLIC_MUSIC_DURABLE: bool =  Field(
+        description='RabbitMQ durable',
+        default=True
+    )
+
 
 class SunoConfig(
     PackagingInfo,
     DeploymentConfig,
     SunoClientConfig,
     LoggingConfig,
-    DatabaseConfig
+    DatabaseConfig,
+    RabbitMQSettings
 ):
     model_config = SettingsConfigDict(
         # read from dotenv format config file

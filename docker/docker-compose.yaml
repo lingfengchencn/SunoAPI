@@ -3,8 +3,8 @@ services:
     build: 
       context: ../
       dockerfile: Dockerfile
-    image: sunoapi:5.20.0_fix2
-    # image: registry.cn-shanghai.aliyuncs.com/miaocode/sunoapi:5.20.0_fix1
+    image: sunoapi:5.22.3
+    # image: registry.cn-shanghai.aliyuncs.com/miaocode/sunoapi:5.20.0_fix8
 
     command: tail -f /dev/null
     environment:
@@ -19,3 +19,9 @@ services:
       options:
         max-size: "10m"
         max-file: "10"
+    networks:
+      - gt_network
+networks:
+  gt_network:
+    name: gt_network
+    driver: bridge

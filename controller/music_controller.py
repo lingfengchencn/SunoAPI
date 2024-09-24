@@ -15,27 +15,16 @@ from models import SunoJobTypeEnum, SunoJobs
 from request_model import GenGPTMusicRequest, GenLyricsMusicRequest, GetMusicRequest
 from suno.entities import ClipStatusEnum
 router = APIRouter()
-
+from services.music_service import MusicService
 import logging
 logger = logging.getLogger(__name__)
 
 @router.post("/gen_music_by_lyrics")
 async def gen_music_by_lyrics(request: GenLyricsMusicRequest,db:Session = Depends(get_db)):
-    client = app.state.suno
     
-    result = client.gen_music(request.model_dump())
-
-    for clip in result.clips:
-        job = SunoJobs(
-                job_type=SunoJobTypeEnum.MUSIC.value,
-                status=ClipStatusEnum.QUEUED.value,
-                request= request.to_dict(),
-                created_at=datetime.now()
-            )
-        job.job_id = clip.id
-        job.response = clip.to_json()
-        db.add(job)
-    db.commit()
+    service = MusicService()
+    job_list = service.create(request.to_dict())
+    result = [job.to_json() for job in job_list]
     
     with app.state.music_lock:
         # 启用线程，查询剩下所有任务的情况。并枷锁，单线程
@@ -48,20 +37,10 @@ async def gen_music_by_lyrics(request: GenLyricsMusicRequest,db:Session = Depend
 
 @router.post("/gen_music_gpt")
 async def gen_music_gpt(request: GenGPTMusicRequest,db:Session = Depends(get_db)):
-    client = app.state.suno
-    result = client.gen_music(request.model_dump())
-
-    for clip in result.clips:
-        job = SunoJobs(
-                job_type=SunoJobTypeEnum.MUSIC.value,
-                status=ClipStatusEnum.QUEUED.value,
-                request= request.to_dict(),
-                created_at=datetime.now()
-            )
-        job.job_id = clip.id
-        job.response = clip.to_json()
-        db.add(job)
-    db.commit()
+    service = MusicService()
+    job_list = service.create(request.to_dict())
+    result = [job.to_json() for job in job_list]
+    
 
     with app.state.music_lock:
         # 启用线程，查询剩下所有任务的情况。并枷锁，单线程
@@ -71,22 +50,18 @@ async def gen_music_gpt(request: GenGPTMusicRequest,db:Session = Depends(get_db)
 
 @router.post("/get_music")
 async def get_music(request: GetMusicRequest,db:Session = Depends(get_db)):
-    client = app.state.suno
-    stmt = select(SunoJobs).where(
-                SunoJobs.job_type == SunoJobTypeEnum.MUSIC.value,
-                SunoJobs.job_id.in_(request.music_ids)
-            )
-    result = db.execute(stmt).scalars().all()
-    
-    clips = [clip.response for clip in result ]
+    service = MusicService()
+    jobs = service.get(request.job_ids)
 
+    result = [job.to_json() for job in jobs]
+    
+    logger.info(f"get music data : { result }")
     
     with app.state.music_lock:
         # 启用线程，查询剩下所有任务的情况。并枷锁，单线程
         thread = threading.Thread(target=_thread_get_musics,args=(db,))
         thread.start()
-
-    return {"clips":clips}
+    return result
 
 
 def _update_music_data(db:Session):
@@ -101,10 +76,12 @@ def _update_music_data(db:Session):
     if not result:
         return 0,0
 
-    ids =  [str(clip.job_id.hex) for clip in result ]
+    ids =  [str(clip.job_id) for clip in result ]
 
     try:
         music_list = client.get_music(ids)
+
+        logger.info(f"get suno music data : {[music.to_json() for music in music_list]}")
 
         for clip in music_list:
             db_clips = [db_c for db_c in result if str(db_c.job_id) == clip.id]
@@ -137,4 +114,4 @@ def _thread_get_musics(db: Session):
                 continue
     finally:
         # 解锁
-        app.state.lyrics_task_running = False
+        app.state.music_task_running = False

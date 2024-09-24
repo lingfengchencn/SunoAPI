@@ -83,5 +83,5 @@ class GenGPTMusicRequest(BaseModel):
         }
 
 class GetMusicRequest(BaseModel):
-    music_ids: List[str] 
+    job_ids: List[str] 
     

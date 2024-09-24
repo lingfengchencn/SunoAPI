@@ -13,11 +13,16 @@ from starlette.responses import Response
 from contextvars import ContextVar
 
 request_id_ctx_var = ContextVar("request_id", default=None)
-
+import logging
+logger = logging.getLogger(__name__)
 class RequestIdMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request_id = str(uuid.uuid4())
         request_id_ctx_var.set(request_id)
+        # 打印 json data 
+        request_body = await request.body()  # 等待异步方法获取内容
+        data = json.loads(request_body)      # 将请求内容解析为 JSON
+        logger.info(f"request data: {data}")
         response: Response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
         return response

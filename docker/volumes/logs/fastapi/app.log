@@ -1,0 +1,91 @@
+[1m[2024-09-23 20:26:29,635.635 ERROR][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [base.py:1008][0m  - Exception during reset or similar
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 986, in _finalize_fairy
+    fairy._reset(
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1432, in _reset
+    pool._dialect.do_rollback(self)
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 699, in do_rollback
+    dbapi_connection.rollback()
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+[1m[2024-09-23 20:26:47,711.711 ERROR][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [base.py:1008][0m  - Exception during reset or similar
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 986, in _finalize_fairy
+    fairy._reset(
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1432, in _reset
+    pool._dialect.do_rollback(self)
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 699, in do_rollback
+    dbapi_connection.rollback()
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+[1m[2024-09-23 20:27:05,921.921 ERROR][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [base.py:1008][0m  - Exception during reset or similar
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 986, in _finalize_fairy
+    fairy._reset(
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 1432, in _reset
+    pool._dialect.do_rollback(self)
+  File "/usr/local/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 699, in do_rollback
+    dbapi_connection.rollback()
+psycopg2.OperationalError: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+[1m[2024-09-23 19:11:06,848.848 ERROR][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [base_connection.py:428][0m  - connection_lost: StreamLostError: ('Transport indicated EOF',)
+[1m[2024-09-23 20:27:05,929.929 INFO][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [connection.py:2017][0m  - AMQP stack terminated, failed to connect, or aborted: opened=True, error-arg=StreamLostError: ('Transport indicated EOF',); pending-error=None
+[1m[2024-09-23 20:27:05,930.930 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [heartbeat.py:138][0m  - Removing timer for next heartbeat send interval
+[1m[2024-09-23 20:27:05,931.931 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [select_connection.py:284][0m  - remove_timeout: removing timeout <pika.adapters.select_connection._Timeout object at 0x7f6633f96b30> with deadline=28436.091733572 and callback=<bound method HeartbeatChecker._send_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7f6633f754e0>>
+[1m[2024-09-23 20:27:05,932.932 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [heartbeat.py:142][0m  - Removing timer for next heartbeat check interval
+[1m[2024-09-23 20:27:05,932.932 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [select_connection.py:284][0m  - remove_timeout: removing timeout <pika.adapters.select_connection._Timeout object at 0x7f6639134cd0> with deadline=28425.458660707 and callback=<bound method HeartbeatChecker._check_heartbeat of <pika.heartbeat.HeartbeatChecker object at 0x7f6633f754e0>>
+[1m[2024-09-23 20:27:05,933.933 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [connection.py:2294][0m  - New Connection state: CLOSED (prev=OPEN)
+[1m[2024-09-23 20:27:05,934.934 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [channel.py:1120][0m  - Handling meta-close on <Channel number=1 OPEN conn=<SelectConnection CLOSED transport=None params=<ConnectionParameters host=47.101.178.154 port=5672 virtual_host=/ ssl=False>>>: StreamLostError: ('Transport indicated EOF',)
+[1m[2024-09-23 20:27:05,934.934 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:217][0m  - Processing 1:_on_channel_close
+[1m[2024-09-23 20:27:05,935.935 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:231][0m  - Calling <bound method BlockingChannel._on_channel_closed of <BlockingChannel impl=<Channel number=1 CLOSED conn=<SelectConnection CLOSED transport=None params=<ConnectionParameters host=47.101.178.154 port=5672 virtual_host=/ ssl=False>>>>> for "1:_on_channel_close"
+[1m[2024-09-23 20:27:05,936.936 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [blocking_connection.py:1417][0m  - _on_channel_closed: StreamLostError: ('Transport indicated EOF',); <BlockingChannel impl=<Channel number=1 CLOSED conn=<SelectConnection CLOSED transport=None params=<ConnectionParameters host=47.101.178.154 port=5672 virtual_host=/ ssl=False>>>>
+[1m[2024-09-23 20:27:05,937.937 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:217][0m  - Processing 1:_on_channel_cleanup
+[1m[2024-09-23 20:27:05,937.937 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:401][0m  - Processing use of oneshot callback
+[1m[2024-09-23 20:27:05,938.938 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:403][0m  - 0 registered uses left
+[1m[2024-09-23 20:27:05,938.938 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:265][0m  - Removing callback #0: {'callback': <bound method Connection._on_channel_cleanup of <SelectConnection CLOSED transport=None params=<ConnectionParameters host=47.101.178.154 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': <Channel number=1 CLOSED conn=<SelectConnection CLOSED transport=None params=<ConnectionParameters host=47.101.178.154 port=5672 virtual_host=/ ssl=False>>>, 'arguments': None, 'calls': 0}
+[1m[2024-09-23 20:27:05,939.939 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:231][0m  - Calling <bound method Connection._on_channel_cleanup of <SelectConnection CLOSED transport=None params=<ConnectionParameters host=47.101.178.154 port=5672 virtual_host=/ ssl=False>>> for "1:_on_channel_cleanup"
+[1m[2024-09-23 20:27:05,939.939 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [connection.py:1701][0m  - Removed channel 1
+[1m[2024-09-23 20:27:05,940.940 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:182][0m  - Clearing out '1' from the stack
+[1m[2024-09-23 20:27:05,940.940 INFO][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [connection.py:2086][0m  - Stack terminated due to StreamLostError: ('Transport indicated EOF',)
+[1m[2024-09-23 20:27:05,941.941 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:217][0m  - Processing 0:_on_connection_closed
+[1m[2024-09-23 20:27:05,941.941 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:231][0m  - Calling <bound method _CallbackResult.set_value_once of <pika.adapters.blocking_connection._CallbackResult object at 0x7f663397b100>> for "0:_on_connection_closed"
+[1m[2024-09-23 20:27:05,942.942 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [connection.py:2294][0m  - New Connection state: CLOSED (prev=CLOSED)
+[1m[2024-09-23 20:27:05,943.943 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:165][0m  - Added: {'callback': <bound method Connection._on_connection_start of <SelectConnection CLOSED transport=None params=<ConnectionParameters host=47.101.178.154 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 1}
+[1m[2024-09-23 20:27:05,943.943 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [callback.py:155][0m  - Incremented callback reference counter: {'callback': <bound method Connection._on_connection_close_from_broker of <SelectConnection CLOSED transport=None params=<ConnectionParameters host=47.101.178.154 port=5672 virtual_host=/ ssl=False>>>, 'one_shot': True, 'only': None, 'arguments': None, 'calls': 2}
+[1m[2024-09-23 20:27:05,944.944 INFO][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [io_services_utils.py:882][0m  - Closing transport socket and unlinking: state=3; <socket.socket fd=22, family=AddressFamily.AF_INET, type=SocketKind.SOCK_STREAM, proto=6, laddr=('172.20.0.2', 52638), raddr=('47.101.178.154', 5672)>
+[1m[2024-09-23 20:27:05,945.945 ERROR][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [blocking_connection.py:521][0m  - Unexpected connection close detected: StreamLostError: ('Transport indicated EOF',)
+[1m[2024-09-23 20:27:05,946.946 ERROR][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [mq_service.py:165][0m  - Connection error: Transport indicated EOF
+[1m[2024-09-23 20:27:05,947.947 DEBUG][92m[N/A][0m[1m[ThreadPoolExecutor-0_1] [blocking_connection.py:1529][0m  - Channel.close(0, Normal shutdown)
+[1m[2024-09-23 20:27:05,947.947 ERROR][92m[N/A][0m[1m[asyncio_0] [base_events.py:1758][0m  - Future exception was never retrieved
+future: <Future finished exception=ChannelWrongStateError: ('Channel is closed.',)>
+Traceback (most recent call last):
+  File "/app/services/mq_service.py", line 161, in start_music_consuming
+    self.music_channel.start_consuming()
+  File "/usr/local/lib/python3.10/site-packages/pika/adapters/blocking_connection.py", line 1883, in start_consuming
+    self._process_data_events(time_limit=None)
+  File "/usr/local/lib/python3.10/site-packages/pika/adapters/blocking_connection.py", line 2044, in _process_data_events
+    self.connection.process_data_events(time_limit=time_limit)
+  File "/usr/local/lib/python3.10/site-packages/pika/adapters/blocking_connection.py", line 842, in process_data_events
+    self._flush_output(common_terminator)
+  File "/usr/local/lib/python3.10/site-packages/pika/adapters/blocking_connection.py", line 523, in _flush_output
+    raise self._closed_result.value.error
+pika.exceptions.StreamLostError: Transport indicated EOF
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/app/services/mq_service.py", line 166, in start_music_consuming
+    self.music_channel.close()
+  File "/usr/local/lib/python3.10/site-packages/pika/adapters/blocking_connection.py", line 1531, in close
+    self._impl._raise_if_not_open()
+  File "/usr/local/lib/python3.10/site-packages/pika/channel.py", line 1403, in _raise_if_not_open
+    raise exceptions.ChannelWrongStateError('Channel is closed.')
+pika.exceptions.ChannelWrongStateError: Channel is closed.

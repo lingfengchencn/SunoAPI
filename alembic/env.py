@@ -62,39 +62,39 @@ def do_run_migrations(connection: AsyncConnection):
         context.run_migrations()
 
 async def run_migrations_online() -> None:
-    """在“在线”模式下运行迁移.
+    # """在“在线”模式下运行迁移.
 
-    在这个场景中我们需要创建引擎
-    并连接与上下文.
-    """
-    connectable = create_async_engine(
-        config.get_main_option("sqlalchemy.url"),
-        poolclass=pool.NullPool,
-    )
-
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
-
-    await connectable.dispose()
-    # """Run migrations in 'online' mode.
-
-    # In this scenario we need to create an Engine
-    # and associate a connection with the context.
-
+    # 在这个场景中我们需要创建引擎
+    # 并连接与上下文.
     # """
-    # connectable = engine_from_config(
-    #     config.get_section(config.config_ini_section, {}),
-    #     prefix="sqlalchemy.",
+    # connectable = create_async_engine(
+    #     config.get_main_option("sqlalchemy.url"),
     #     poolclass=pool.NullPool,
     # )
 
-    # with connectable.connect() as connection:
-    #     context.configure(
-    #         connection=connection, target_metadata=target_metadata
-    #     )
+    # async with connectable.connect() as connection:
+    #     await connection.run_sync(do_run_migrations)
 
-    #     with context.begin_transaction():
-    #         context.run_migrations()
+    # await connectable.dispose()
+    """Run migrations in 'online' mode.
+
+    In this scenario we need to create an Engine
+    and associate a connection with the context.
+
+    """
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
 
 
 if context.is_offline_mode():

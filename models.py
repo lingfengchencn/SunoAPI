@@ -24,6 +24,7 @@ class SunoJobs(Base):
     id = Column(UUID(as_uuid=True),primary_key=True, default=uuid.uuid4, index=True) # 任务id
     job_id = Column(UUID(as_uuid=True), index=True) #suno music id
     job_type = Column(String(10)) # 任务类型
+    account=Column(String,default='') # suno 用户
     status = Column(String) # 任务状态
     request = Column(JSON) # 请求参数
     response = Column(JSON) # 响应参数
@@ -39,11 +40,13 @@ class SunoJobs(Base):
 
     def to_json(self):
         return {
-            "id": self.id,
-            "job_id": self.job_id,
+            "id": str(self.id),
+            "job_id": str(self.job_id),
             "job_type": self.job_type,
+            "account": self.account,
             "status": self.status,
             "request": self.request,
             "response": self.response,
-            "created_at": self.created_at
+            # 格式化时间 为字符串   
+            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S")
         }

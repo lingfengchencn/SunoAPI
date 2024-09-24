@@ -127,7 +127,7 @@ class SunoService:
                    "Content-Type":"application/x-www-form-urlencoded"}
         headers.update(COMMON_HEADERS)
         response = requests.post(url, headers=headers)
-        logger.debug(f"update_token url: {url} headers:{headers} response: {response.text}")
+        # logger.debug(f"update_token url: {url} headers:{headers} response: {response.text}")
         response.raise_for_status()
         resp_headers = dict(response.headers)
         set_cookie = resp_headers.get("Set-Cookie")
@@ -136,7 +136,7 @@ class SunoService:
         token = data.get("jwt")
         self.suno_cookie.set_token(token)
 
-        logger.debug(f"update_token: {token}")
+        logger.debug(f"update_token: {token[:10]}...")
 
         return SunoToken.from_json(data)
 
