@@ -2,6 +2,7 @@ from typing import Any, Optional
 from urllib.parse import quote_plus
 from pydantic import Field, NonNegativeInt, PositiveInt, computed_field
 from pydantic_settings import SettingsConfigDict,BaseSettings
+import uuid
 
 class PackagingInfo(BaseSettings):
     """
@@ -152,6 +153,10 @@ class RabbitMQSettings(BaseSettings):
         description='RabbitMQ durable',
         default=True
     )
+    RABBITMQ_CONSUME_TAG: str = Field(
+        description='RabbitMQ conusme tag',
+        default=uuid.uuid4().hex
+    )
 
 
     RABBITMQ_PUBLIC_HOST: str = Field(
@@ -204,6 +209,11 @@ class RabbitMQSettings(BaseSettings):
     RABBITMQ_PUBLIC_MUSIC_DURABLE: bool =  Field(
         description='RabbitMQ durable',
         default=True
+    )
+
+    RABBITMQ_PUBLIC_MUSIC_CONSUME_TAG: str = Field(
+        description='RabbitMQ music conusme tag',
+        default=uuid.uuid4().hex
     )
 
 

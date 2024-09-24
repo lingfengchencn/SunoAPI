@@ -120,7 +120,10 @@ class MQSerivce():
                 MQSerivce.gen_music(ch, method, properties, body)
 
 
-        self.consume_channel.basic_consume(queue=config.RABBITMQ_CONSUME_QUEUE, on_message_callback=callback,auto_ack=False)
+        self.consume_channel.basic_consume(queue=config.RABBITMQ_CONSUME_QUEUE, 
+                                           on_message_callback=callback,
+                                           auto_ack=False,
+                                           consumer_tag=config.RABBITMQ_CONSUME_TAG)
         self.consume_channel.start_consuming()
 
     def start_music_consuming(self):
@@ -157,7 +160,11 @@ class MQSerivce():
                     except Exception as ex:
                         logger.error(f"任务失败，id={data.get('id')} ,type={data.get('type')} ,ex={str(ex)}")
                         ch.basic_nack(delivery_tag=method.delivery_tag,requeue=True )
-                self.music_channel.basic_consume(queue=config.RABBITMQ_PUBLIC_MUSIC_QUEUE, on_message_callback=music_callback,auto_ack=False)
+                self.music_channel.basic_consume(queue=config.RABBITMQ_PUBLIC_MUSIC_QUEUE, 
+                                                 on_message_callback=music_callback,
+                                                 auto_ack=False,
+                                                 consumer_tag=config.RABBITMQ_PUBLIC_MUSIC_CONSUME_TAG
+                                                 )
                 self.music_channel.start_consuming()
             except (pika.exceptions.ConnectionClosedByBroker, 
                     pika.exceptions.AMQPChannelError,

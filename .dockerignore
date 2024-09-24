@@ -1,5 +1,5 @@
 .venv/
-docker/volumes/
+docker/volumes/*
 docker/.env
 .env
 .gitignore
