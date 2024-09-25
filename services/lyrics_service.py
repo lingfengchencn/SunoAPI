@@ -12,6 +12,7 @@ from sqlalchemy.sql.expression import not_
 from extentions.ext_database import get_db
 
 import logging
+from configs import config
 
 from suno.exceptions import NotFoundException, ServiceUnavailableException
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class LyricsService:
             job = SunoJobs(
                 job_type=SunoJobTypeEnum.LYRICS.value,
                 status=ClipStatusEnum.QUEUED.value,
+                account=config.SUNO_ACCOUNT,
                 request= request,
                 created_at=datetime.now()
             )

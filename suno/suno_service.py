@@ -10,7 +10,7 @@ import time
 import aiohttp
 from .entities import BillingInfo, Clip, GenMusicRequest, GenMusicResponse, \
     SunoAuthTypeEnum, SunoLyric, SunoToken, SunoUploadAudioKey, SunoUploadAudioStatus, SunoUploadAudioStatusEnum
-from .exceptions import ServiceUnavailableException, TooManyRequestsException, UnauthorizedException
+from .exceptions import NotFoundException, ServiceUnavailableException, TooManyRequestsException, UnauthorizedException
 from .suno_http import SunoCookie
 import logging
 logger = logging.getLogger(__name__)
@@ -72,6 +72,10 @@ class SunoService:
                     
                 if "Unauthorized" in response.text:
                     raise UnauthorizedException("Unauthorized")
+                if "Not found" in response.text:
+                    raise NotFoundException("Not found")
+                
+
                 response.raise_for_status()
                 response = response.json()
                 

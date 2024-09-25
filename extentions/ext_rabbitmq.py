@@ -55,6 +55,10 @@ class RabbitMQ:
     def close(self):
         if self.consume_connection and not self.consume_connection.is_closed:
             self.consume_connection.close()
+        if self.public_connection and not self.public_connection.is_closed:
+            self.public_connection.close()
+        if self.public_music_connection and not self.public_music_connection.is_closed:
+            self.public_music_connection.close()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

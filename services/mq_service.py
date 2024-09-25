@@ -139,7 +139,7 @@ class MQSerivce():
                     # 整体获取一下所有music状态
                     # 获取当前任务状态，如果任务完成/失败，添加任务到public队列
                     service = MusicService()
-                    service.mq_fetch_suno(db)
+                    jobs = service.mq_fetch_suno(db)
                     try:
                         job = service.get(data.get('job_id'),db)
                         if job and ( job.status == ClipStatusEnum.ERROR.value or job.status == ClipStatusEnum.COMPLETE.value):
@@ -160,6 +160,8 @@ class MQSerivce():
                     except Exception as ex:
                         logger.error(f"任务失败，id={data.get('id')} ,type={data.get('type')} ,ex={str(ex)}")
                         ch.basic_nack(delivery_tag=method.delivery_tag,requeue=True )
+                        time.sleep(10)
+
                 self.music_channel.basic_consume(queue=config.RABBITMQ_PUBLIC_MUSIC_QUEUE, 
                                                  on_message_callback=music_callback,
                                                  auto_ack=False,
