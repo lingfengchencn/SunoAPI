@@ -157,6 +157,37 @@ class RabbitMQSettings(BaseSettings):
         description='RabbitMQ conusme tag',
         default=uuid.uuid4().hex
     )
+    RABBITMQ_CONSUME_CONNECTION_ATTEMPS: int = Field(
+        description='RabbitMQ connection attempts',
+        default=10
+    )
+    RABBITMQ_CONSUME_RETRY_DELAY: int = Field(
+        description='RabbitMQ retry delay',
+        default=5
+    )
+    RABBITMQ_CONSUME_SOCKET_TIMEOUT: int = Field(
+        description='RabbitMQ socket timeout',
+        default=10
+    )
+    RABBITMQ_CONSUME_BLOCKED_CONNECTION_TIMEOUT: int = Field(
+        description='RabbitMQ blocked connection timeout',
+        default=30
+    )
+    RABBITMQ_CONSUME_CHANNEL_MAX: int = Field(
+        description='RabbitMQ channel max',
+        default=10
+    )
+    RABBITMQ_CONSUME_HEARTBEAT: int = Field(
+        description='RabbitMQ heartbeat',
+        default=1000
+    )
+
+
+
+
+
+
+
 
 
     RABBITMQ_PUBLIC_HOST: str = Field(
@@ -182,6 +213,30 @@ class RabbitMQSettings(BaseSettings):
     RABBITMQ_PUBLIC_DURABLE: bool =  Field(
         description='RabbitMQ durable',
         default=True
+    )
+    RABBITMQ_PUBLIC_CONNECTION_ATTEMPS: int = Field(
+        description='RabbitMQ connection attempts',
+        default=10
+    )
+    RABBITMQ_PUBLIC_RETRY_DELAY: int = Field(
+        description='RabbitMQ retry delay',
+        default=5
+    )
+    RABBITMQ_PUBLIC_SOCKET_TIMEOUT: int = Field(
+        description='RabbitMQ socket timeout',
+        default=10
+    )
+    RABBITMQ_PUBLIC_BLOCKED_CONNECTION_TIMEOUT: int = Field(
+        description='RabbitMQ blocked connection timeout',
+        default=30
+    )
+    RABBITMQ_PUBLIC_CHANNEL_MAX: int = Field(
+        description='RabbitMQ channel max',
+        default=10
+    )
+    RABBITMQ_PUBLIC_HEARTBEAT: int = Field(
+        description='RabbitMQ heartbeat',
+        default=1000
     )
 
 
@@ -210,11 +265,35 @@ class RabbitMQSettings(BaseSettings):
         description='RabbitMQ durable',
         default=True
     )
-
     RABBITMQ_PUBLIC_MUSIC_CONSUME_TAG: str = Field(
         description='RabbitMQ music conusme tag',
         default=uuid.uuid4().hex
     )
+    RABBITMQ_PUBLIC_MUSIC_CONNECTION_ATTEMPS: int = Field(
+        description='RabbitMQ connection attempts',
+        default=10
+    )
+    RABBITMQ_PUBLIC_MUSIC_RETRY_DELAY: int = Field(
+        description='RabbitMQ retry delay',
+        default=5
+    )
+    RABBITMQ_PUBLIC_MUSIC_SOCKET_TIMEOUT: int = Field(
+        description='RabbitMQ socket timeout',
+        default=10
+    )
+    RABBITMQ_PUBLIC_MUSIC_BLOCKED_CONNECTION_TIMEOUT: int = Field(
+        description='RabbitMQ blocked connection timeout',
+        default=30
+    )
+    RABBITMQ_PUBLIC_MUSIC_CHANNEL_MAX: int = Field(
+        description='RabbitMQ channel max',
+        default=10
+    )
+    RABBITMQ_PUBLIC_MUSIC_HEARTBEAT: int = Field(
+        description='RabbitMQ heartbeat',
+        default=1000
+    )
+
 
 
 class SunoConfig(

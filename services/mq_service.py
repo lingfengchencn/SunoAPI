@@ -13,6 +13,7 @@ import logging
 from models import SunoJobTypeEnum
 from services.music_service import MusicService
 from suno.entities import ClipStatusEnum
+from suno.exceptions import TooManyRequestsException
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +38,17 @@ class MQSerivce():
         service = LyricsService()
         db = next(get_db())
         data = json.loads(body)
+
+
+        running_jobs = service.get_running_jobs(
+            job_type=SunoJobTypeEnum.LYRICS, db=db)
+        
+
+        if len(running_jobs) >= 1:
+            logger.debug('MQService: Reached max running jobs')
+            raise Exception("Reached max running jobs")
+
+
         job = service.create(data, db)
         task_type = data.get('type', 'lyrics')
         task_id = data.get('id')
@@ -107,25 +119,43 @@ class MQSerivce():
             time.sleep(5)  # 失败稍等在执行
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 
-    def start_consuming(self):
-        logger.info("MQService: Start consuming")
-        # self.consume_channel = rabbitmq.get_consume_channel()
 
+    def _start_consume(self):
+        self.consume_channel = rabbitmq.get_consume_channel()
         def callback(ch, method, properties, body):
             logger.info(f"Received message: {body}")
             data = json.loads(body)
             task_type = data.get('type', 'lyrics')
+            try:
+                if task_type == 'lyrics':
+                    MQSerivce.gen_lyrics(ch, method, properties, body)
+                else:
+                    MQSerivce.gen_music(ch, method, properties, body)
+            except TooManyRequestsException:
+                logger.error("Too many requests, retrying...")
+                time.sleep(5)
+                ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+            
 
-            if task_type == 'lyrics':
-                MQSerivce.gen_lyrics(ch, method, properties, body)
-            else:
-                MQSerivce.gen_music(ch, method, properties, body)
 
+        self.consume_channel.basic_qos(prefetch_count=config.SUNO_MAX_RUNNING_JOBS)
         self.consume_channel.basic_consume(queue=config.RABBITMQ_CONSUME_QUEUE,
                                            on_message_callback=callback,
                                            auto_ack=False,
                                            consumer_tag=config.RABBITMQ_CONSUME_TAG)
         self.consume_channel.start_consuming()
+
+
+    def start_consuming(self):
+        logger.info("MQService: Start consuming")
+        # self.consume_channel = rabbitmq.get_consume_channel()
+        while True:
+            # try:
+                self._start_consume()
+            # except Exception as ex:
+            #     logger.error(f"MQService: Consume error: {str(ex)}")
+            #     time.sleep(5)
+
 
     def start_music_consuming(self):
         logger.info("MQService: Start consuming music")
@@ -166,7 +196,7 @@ class MQSerivce():
                         ch.basic_nack(
                             delivery_tag=method.delivery_tag, requeue=True)
                         time.sleep(10)
-
+                self.music_channel.basic_qos(prefetch_count=1)
                 self.music_channel.basic_consume(queue=config.RABBITMQ_PUBLIC_MUSIC_QUEUE,
                                                  on_message_callback=music_callback,
                                                  auto_ack=False,
@@ -189,3 +219,5 @@ class MQSerivce():
     def stop_consuming(self):
         if self.consume_channel:
             self.consume_channel.stop_consuming()
+        if self.music_channel:
+            self.music_channel.stop_consuming()

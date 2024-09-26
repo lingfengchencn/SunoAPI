@@ -1,5 +1,5 @@
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from requests import HTTPError
 from extentions.ext_app import app
@@ -70,3 +70,30 @@ class LyricsService:
                 raise NotFoundException("lyrics id is invalid or expired")
 
         return job
+    
+    def get_running_jobs(self, job_type: SunoJobTypeEnum = SunoJobTypeEnum.LYRICS, created_duration: int = 60*5, db=next(get_db())):
+        """
+        获取运行中任务
+        job_type: 任务类型
+        created_duration  int : 创建时间间隔,单位：秒
+
+        """
+        stmt = select(SunoJobs).where(
+            not_(SunoJobs.status.in_(
+                [ClipStatusEnum.COMPLETE.value, ClipStatusEnum.ERROR.value])),
+            SunoJobs.account == config.SUNO_ACCOUNT
+        )
+        if job_type:
+            stmt = stmt.where(SunoJobs.job_type == job_type.value)
+
+        if created_duration:
+            time_delta = timedelta(seconds=created_duration)
+            stmt = stmt.where(SunoJobs.created_at >=
+                              datetime.now() - time_delta)
+
+        jobs = db.execute(stmt).scalars().all()
+
+        logger.info(
+            f"get suno jobs number: {len(jobs)}, job info : {','.join( [str(job.id)  for job in jobs])}")
+
+        return jobs

@@ -61,7 +61,6 @@ class MusicService:
 
         """
         stmt = select(SunoJobs).where(
-            SunoJobs.job_type == SunoJobTypeEnum.MUSIC.value,
             not_(SunoJobs.status.in_(
                 [ClipStatusEnum.COMPLETE.value, ClipStatusEnum.ERROR.value])),
             SunoJobs.account == config.SUNO_ACCOUNT
