@@ -3,15 +3,13 @@ services:
     build: 
       context: ../
       dockerfile: Dockerfile
-    image: sunoapi:5.22.3_fix1
-    # image: registry.cn-shanghai.aliyuncs.com/miaocode/sunoapi:5.22.3_fix1
-
-    command: tail -f /dev/null
+    image: sunoapi:5.22.3_fix4
+    # image: registry.cn-shanghai.aliyuncs.com/miaocode/sunoapi:5.22.3_fix4
     environment:
       TZ: Asia/Shanghai
     volumes:
       - ./volumes/logs:/app/storage/logs
-      - ./.env:/app/.env
+      - .env:/app/.env
     ports:
       - ${SUNO_PORT:-8000}:8000
     logging:
