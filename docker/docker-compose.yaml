@@ -1,15 +1,54 @@
+x-env: &api-env
+  DEBUG: ${DEBUG:-true}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  TZ: ${TZ:-Asia/Shanghai}
+  LOG_TZ: ${LOG_TZ:-Asia/Shanghai}
+
+  ## server port 
+  SUNO_PORT: ${SUNO_PORT:-8000}
+
+  # suno account info
+  SUNO_ACCOUNT: ${SUNO_ACCOUNT:-SUNOAPI_ACCOUNT}
+  SESSION_ID: ${SESSION_ID:-sess_....}
+  COOKIE: ${COOKIE:-cookie}
+  SUNO_MAX_RUNNING_JOBS: ${SUNO_MAX_RUNNING_JOBS:-10}
+
+  # data base info 
+  DB_URL: ${DB_URL:-postgresql://*:*@*:*/*}
+
+  # QUEUE INFO
+  RABBITMQ_CONSUME_HOST: ${RABBITMQ_CONSUME_HOST:-localhost}
+  RABBITMQ_CONSUME_PORT: ${RABBITMQ_CONSUME_PORT:-5672}
+  RABBITMQ_CONSUME_USERNAME: ${RABBITMQ_CONSUME_USERNAME:-root}
+  RABBITMQ_CONSUME_PASSWORD: ${RABBITMQ_CONSUME_PASSWORD:-password}
+  RABBITMQ_CONSUME_QUEUE: ${RABBITMQ_CONSUME_QUEUE:-ai-suno-queue}
+  RABBITMQ_CONSUME_DURABLE: ${RABBITMQ_CONSUME_DURABLE:-true}
+  RABBITMQ_CONSUME_TAG: ${RABBITMQ_CONSUME_TAG:-consume_tag}
+  RABBITMQ_PUBLIC_HOST: ${RABBITMQ_PUBLIC_HOST:-localhost}
+  RABBITMQ_PUBLIC_PORT: ${RABBITMQ_PUBLIC_PORT:-5672}
+  RABBITMQ_PUBLIC_USERNAME: ${RABBITMQ_PUBLIC_USERNAME:-root}
+  RABBITMQ_PUBLIC_PASSWORD: ${RABBITMQ_PUBLIC_PASSWORD:-password}
+  RABBITMQ_PUBLIC_QUEUE: ${RABBITMQ_PUBLIC_QUEUE:-ai-suno-callback-queue}
+  RABBITMQ_PUBLIC_DURABLE: ${RABBITMQ_PUBLIC_DURABLE:-true}
+  RABBITMQ_PUBLIC_MUSIC_HOST: ${RABBITMQ_PUBLIC_MUSIC_HOST:-localhost}
+  RABBITMQ_PUBLIC_MUSIC_PORT: ${RABBITMQ_PUBLIC_MUSIC_PORT:-5672}
+  RABBITMQ_PUBLIC_MUSIC_USERNAME: ${RABBITMQ_PUBLIC_MUSIC_USERNAME:-root}
+  RABBITMQ_PUBLIC_MUSIC_PASSWORD: ${RABBITMQ_PUBLIC_MUSIC_PASSWORD:-passowrd}
+  RABBITMQ_PUBLIC_MUSIC_QUEUE: ${RABBITMQ_PUBLIC_MUSIC_QUEUE:-ai-suno-music-queue}
+  RABBITMQ_PUBLIC_MUSIC_DURABLE: ${RABBITMQ_PUBLIC_MUSIC_DURABLE:-true}
+  RABBITMQ_PUBLIC_MUSIC_CONSUME_TAG: ${RABBITMQ_PUBLIC_MUSIC_CONSUME_TAG:-dev_gen_music_consume_tag}
+
 services:
   sunoapi:
     build: 
       context: ../
       dockerfile: Dockerfile
-    image: sunoapi:5.22.3_fix4
-    # image: registry.cn-shanghai.aliyuncs.com/miaocode/sunoapi:5.22.3_fix4
+    image: sunoapi:5.22.3_fix6
+    # image: registry.cn-shanghai.aliyuncs.com/miaocode/sunoapi:5.22.3_fix6
     environment:
-      TZ: Asia/Shanghai
+      <<: *api-env
     volumes:
       - ./volumes/logs:/app/storage/logs
-      - .env:/app/.env
     ports:
       - ${SUNO_PORT:-8000}:8000
     logging:

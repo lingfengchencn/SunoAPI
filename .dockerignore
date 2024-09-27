@@ -1,6 +1,7 @@
 .venv/
 docker/volumes/*
 docker/.env
+storage/*
 .env
 .gitignore
 .gitmodules
