@@ -4,9 +4,8 @@ from logging.handlers import TimedRotatingFileHandler
 import uuid
 import pytz
 from datetime import datetime
-from fastapi import FastAPI
 from configs import config
-from middlewares import request_id_ctx_var
+from extentions.ext_response_hooks import request_id_ctx_var
     
 class RequestIdFilter(logging.Filter):
     def filter(self, record):
@@ -14,10 +13,10 @@ class RequestIdFilter(logging.Filter):
         record.request_id = request_id if request_id else 'N/A'
         return True
     
-def setup_logger(app: FastAPI):
+def setup_logger(app):
     # 确保日志目录存在
-    if not os.path.exists('storage/logs/fastapi'):
-        os.makedirs('storage/logs/fastapi')
+    if not os.path.exists('storage/logs'):
+        os.makedirs('storage/logs')
 
 
 
@@ -26,7 +25,7 @@ def setup_logger(app: FastAPI):
 
     # 创建按小时分割的日志处理器
     timed_handler = TimedRotatingFileHandler(
-        'storage/logs/fastapi/app.log', 
+        'storage/logs/app.log', 
         when=config.LOG_WHEN,   
         interval=config.LOG_INTERVAL,   
         backupCount=config.LOG_BACKUPCOUNT  

@@ -1,24 +1,26 @@
 {
-    // 使用 IntelliSense 了解相关属性。 
-    // 悬停以查看现有属性的描述。
-    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python 调试程序: FastAPI",
+            "name": "Python 调试程序: Flask",
             "type": "debugpy",
             "request": "launch",
-            "module": "uvicorn",
+            "module": "flask",
+            "pythonPath": "${workspaceFolder}/.venv/bin/python",
+            "env": {
+                "FLASK_APP": "app.py",
+                "FLASK_RUN_PORT": "8000",
+                "FLASK_DEBUG": "1"
+            },
             "args": [
-                "main:app",
-                "--reload"
+                "run",
+                "--debug"
             ],
             "jinja": true,
             "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.env",  // 指定 .env 文件路径
-
-            "pythonPath":"${workspaceFolder}/.venv/bin/python"
-  
+            "justMyCode": true,
+            "autoStartBrowser": false,
+            "envFile": "${workspaceFolder}/.env"  // 指定 .env 文件路径
         }
     ]
 }

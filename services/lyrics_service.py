@@ -9,7 +9,7 @@ from models import SunoJobs, SunoJobTypeEnum
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.sql.expression import not_
-from extentions.ext_database import get_db
+from extentions.ext_database import db
 
 import logging
 from configs import config
@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 
 class LyricsService:
 
-    def create(self,request:dict, db = next(get_db())) -> SunoJobs:
+    @classmethod
+    def create(cls,request:dict) -> SunoJobs:
         client = app.state.suno
         try:
             job = SunoJobs(
@@ -34,8 +35,8 @@ class LyricsService:
                 # 更新工作状态
                 job.job_id = lyrics_id
                 job.status = ClipStatusEnum.SUBMITTED.value
-                db.add(job)
-                db.commit()
+                db.session.add(job)
+                db.session.commit()
             except Exception as ex:
                 logger.error(f"gen lyrics exception:{str(ex)}")
                 raise ex
@@ -43,14 +44,12 @@ class LyricsService:
         except ServiceUnavailableException as ex:
             logger.error(f"suno service unavailable:{str(ex)}")
             raise ex
-    
-    def get(self,job_id:str, db = next(get_db()),fetech_suno:bool = True) -> SunoJobs:
+    @classmethod
+    def get(cls,job_id:str, fetech_suno:bool = True) -> SunoJobs:
         client = app.state.suno
         try:
-            stmt = select(SunoJobs).where(SunoJobs.id == job_id)
-            # 执行查询
-            result = db.execute(stmt)
-            job = result.scalar_one_or_none()
+            job = db.session.query(SunoJobs).filter(SunoJobs.id == job_id).first()
+
             if job  and job.status in [ClipStatusEnum.COMPLETE.value ,ClipStatusEnum.ERROR.value]:
                 pass
             elif fetech_suno:
@@ -58,42 +57,41 @@ class LyricsService:
                 if suno_lyrics.status == SunoLyricGenerageStatusEnum.COMPLETE:
                     job.status = ClipStatusEnum.COMPLETE.value
                     job.response = suno_lyrics.to_json()
-                    db.add(job)
-                    db.commit()
+                    db.session.add(job)
+                    db.session.commit()
         except HTTPError as e:
             # 如果为404 说明 id不存在
             job.status = ClipStatusEnum.ERROR.value
             job.response = suno_lyrics.to_json()
-            db.add(job)
-            db.commit()
+            db.session.add(job)
+            db.session.commit()
             if e.response.status_code == 404:
                 raise NotFoundException("lyrics id is invalid or expired")
 
         return job
     
-    def get_running_jobs(self, job_type: SunoJobTypeEnum = SunoJobTypeEnum.LYRICS, created_duration: int = 60*5, db=next(get_db())):
+    @classmethod
+    def get_running_jobs(cls, job_type: SunoJobTypeEnum = SunoJobTypeEnum.LYRICS, created_duration: int = 60*5):
         """
         获取运行中任务
         job_type: 任务类型
         created_duration  int : 创建时间间隔,单位：秒
 
         """
-        stmt = select(SunoJobs).where(
+
+        query = db.session.query(SunoJobs).filter(
+            SunoJobs.account == config.SUNO_ACCOUNT,
             not_(SunoJobs.status.in_(
-                [ClipStatusEnum.COMPLETE.value, ClipStatusEnum.ERROR.value])),
-            SunoJobs.account == config.SUNO_ACCOUNT
+                [ClipStatusEnum.COMPLETE.value, ClipStatusEnum.ERROR.value]))
         )
         if job_type:
-            stmt = stmt.where(SunoJobs.job_type == job_type.value)
-
+            query = query.filter(SunoJobs.job_type == job_type.value)
         if created_duration:
             time_delta = timedelta(seconds=created_duration)
-            stmt = stmt.where(SunoJobs.created_at >=
-                              datetime.now() - time_delta)
-
-        jobs = db.execute(stmt).scalars().all()
+            query = query.filter(SunoJobs.created_at >=
+                                 datetime.now() - time_delta)
+        jobs = query.all()
 
         logger.info(
             f"get suno jobs number: {len(jobs)}, job info : {','.join( [str(job.id)  for job in jobs])}")
-
         return jobs

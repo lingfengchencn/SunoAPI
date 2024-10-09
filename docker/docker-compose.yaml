@@ -13,6 +13,10 @@ x-env: &api-env
   COOKIE: ${COOKIE:-cookie}
   SUNO_MAX_RUNNING_JOBS: ${SUNO_MAX_RUNNING_JOBS:-10}
 
+  HTTP_PROXY: ${HTTP_PROXY:-}
+  HTTPS_PROXY: ${HTTPS_PROXY:-}
+  NO_PROXY: ${NO_PROXY:-}
+  
   # data base info 
   DB_URL: ${DB_URL:-postgresql://*:*@*:*/*}
 
@@ -43,10 +47,12 @@ services:
     build: 
       context: ../
       dockerfile: Dockerfile
-    image: sunoapi:5.22.3_fix6
-    # image: registry.cn-shanghai.aliyuncs.com/miaocode/sunoapi:5.22.3_fix6
+    image: sunoapi:5.22.3_fix9
+    # image: registry.cn-shanghai.aliyuncs.com/miaocode/sunoapi:5.22.3_fix9
     environment:
       <<: *api-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./volumes/logs:/app/storage/logs
     ports:

@@ -7,7 +7,33 @@ from sqlalchemy.dialects.postgresql import UUID
 from suno.entities import SunoLyricGenerageStatusEnum
 
 # 创建基础模型类，所有模型将继承自这个类
-Base = declarative_base()
+from extentions.ext_database import db
+
+from sqlalchemy import CHAR, TypeDecorator
+
+
+class StringUUID(TypeDecorator):
+    impl = CHAR
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return value
+        elif dialect.name == 'postgresql':
+            return str(value)
+        else:
+            return value.hex
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(UUID())
+        else:
+            return dialect.type_descriptor(CHAR(36))
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return value
+        return str(value)
 
 class SunoJobTypeEnum(Enum):
     MUSIC = "music"
@@ -19,16 +45,17 @@ class SunoJobTypeEnum(Enum):
             if item.value == value:
                 return item
 
-class SunoJobs(Base):
+class SunoJobs(db.Model):
     __tablename__ = "suno_jobs"
-    id = Column(UUID(as_uuid=True),primary_key=True, default=uuid.uuid4, index=True) # 任务id
-    job_id = Column(UUID(as_uuid=True), index=True) #suno music id
-    job_type = Column(String(10)) # 任务类型
-    account=Column(String,default='') # suno 用户
-    status = Column(String) # 任务状态
-    request = Column(JSON) # 请求参数
-    response = Column(JSON) # 响应参数
-    created_at = Column(DateTime, default=datetime.now(timezone.utc)) #   创建时间
+
+    id = db.Column(StringUUID,primary_key=True, server_default=db.text("uuid_generate_v4()"), index=True) # 任务id
+    job_id = db.Column(db.String(40), index=True) #suno music id
+    job_type = db.Column(db.String(10)) # 任务类型
+    account=db.Column(db.String,default='') # suno 用户
+    status = db.Column(db.String) # 任务状态
+    request = db.Column(db.JSON) # 请求参数
+    response = db.Column(db.JSON) # 响应参数
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc)) #   创建时间
 
     @property
     def job_type_enum(self):

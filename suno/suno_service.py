@@ -130,19 +130,23 @@ class SunoService:
         headers = {"cookie": self.suno_cookie.get_cookie(),
                    "Content-Type":"application/x-www-form-urlencoded"}
         headers.update(COMMON_HEADERS)
-        response = requests.post(url, headers=headers)
-        # logger.debug(f"update_token url: {url} headers:{headers} response: {response.text}")
-        response.raise_for_status()
-        resp_headers = dict(response.headers)
-        set_cookie = resp_headers.get("Set-Cookie")
-        self.suno_cookie.load_cookie(set_cookie)
-        data = response.json()
-        token = data.get("jwt")
-        self.suno_cookie.set_token(token)
+        for _ in range(1,3):
+            try:
+                response = requests.post(url, headers=headers)
+                # logger.debug(f"update_token url: {url} headers:{headers} response: {response.text}")
+                response.raise_for_status()
+                resp_headers = dict(response.headers)
+                set_cookie = resp_headers.get("Set-Cookie")
+                self.suno_cookie.load_cookie(set_cookie)
+                data = response.json()
+                self.data = data
+                token = data.get("jwt")
+                self.suno_cookie.set_token(token)
+                break
+            except Exception as ex:
+                logger.error(f"update_token error: {ex}")
 
-        logger.debug(f"update_token: {token[:10]}...")
-
-        return SunoToken.from_json(data)
+        return SunoToken.from_json(self.data)
 
 
 

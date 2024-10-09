@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 
 from requests import request
 from sqlalchemy import not_, select
-from extentions.ext_app import app
-from extentions.ext_database import get_db
+from flask import current_app as app
+from extentions.ext_database import db
 from models import SunoJobTypeEnum, SunoJobs
 from suno.entities import ClipStatusEnum
 import logging
@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 class MusicService:
 
-    def create(self, request: dict, db=next(get_db())) -> list[SunoJobs]:
+    @classmethod
+    def create(cls, request: dict) -> list[SunoJobs]:
         client = app.state.suno
         result = client.gen_music(request)
         jobs = []
@@ -28,66 +29,94 @@ class MusicService:
             )
             job.job_id = clip.id
             job.response = clip.to_json()
-            db.add(job)
+            db.session.add(job)
             jobs.append(job)
 
-        db.commit()
+        db.session.commit()
 
         return jobs
 
-    def get(self, job_id: str, db=next(get_db())) -> SunoJobs:
-        stmt = select(SunoJobs).where(
+    @classmethod
+    def get(cls, job_id: str) -> SunoJobs:
+        job = db.session.query(SunoJobs).filter(
             SunoJobs.job_type == SunoJobTypeEnum.MUSIC.value,
-            SunoJobs.id == job_id
-        )
-        job = db.execute(stmt).scalar_one_or_none()
+            SunoJobs.id == job_id).one_or_none()
 
         return job
+    @classmethod
+    def get_list(cls, job_ids: list) -> list[SunoJobs]:
+        # stmt = select(SunoJobs).where(
+        #     SunoJobs.job_type == SunoJobTypeEnum.MUSIC.value,
+        #     SunoJobs.id.in_(job_ids)
+        # )
+        # jobs = db.execute(stmt).scalars().all()
 
-    def get_list(self, job_ids: list, db=next(get_db())) -> list[SunoJobs]:
-        stmt = select(SunoJobs).where(
+        jobs =  db.session.query(SunoJobs).filter(
             SunoJobs.job_type == SunoJobTypeEnum.MUSIC.value,
             SunoJobs.id.in_(job_ids)
-        )
-        jobs = db.execute(stmt).scalars().all()
+            ).all()
+
 
         return jobs
 
-    def get_running_jobs(self, job_type: SunoJobTypeEnum, created_duration: int = 60*5, db=next(get_db())):
+    @classmethod
+    def get_running_jobs(cls, job_type: SunoJobTypeEnum, created_duration: int = 60*5):
         """
         获取运行中任务
         job_type: 任务类型
         created_duration  int : 创建时间间隔,单位：秒
 
         """
-        stmt = select(SunoJobs).where(
+        # stmt = select(SunoJobs).where(
+        #     not_(SunoJobs.status.in_(
+        #         [ClipStatusEnum.COMPLETE.value, ClipStatusEnum.ERROR.value])),
+        #     SunoJobs.account == config.SUNO_ACCOUNT
+        # )
+        # if job_type:
+        #     stmt = stmt.where(SunoJobs.job_type == job_type.value)
+
+        # if created_duration:
+        #     time_delta = timedelta(seconds=created_duration)
+        #     stmt = stmt.where(SunoJobs.created_at >=
+        #                       datetime.now() - time_delta)
+
+        # jobs = db.execute(stmt).scalars().all()
+
+        query = db.session.query(SunoJobs).filter(
             not_(SunoJobs.status.in_(
                 [ClipStatusEnum.COMPLETE.value, ClipStatusEnum.ERROR.value])),
             SunoJobs.account == config.SUNO_ACCOUNT
         )
         if job_type:
-            stmt = stmt.where(SunoJobs.job_type == job_type.value)
-
+            query = query.filter(SunoJobs.job_type == job_type.value)
         if created_duration:
             time_delta = timedelta(seconds=created_duration)
-            stmt = stmt.where(SunoJobs.created_at >=
-                              datetime.now() - time_delta)
-
-        jobs = db.execute(stmt).scalars().all()
+            query = query.filter(SunoJobs.created_at >=
+                                datetime.now() - time_delta)
+        jobs = query.all()
 
         logger.info(
             f"get suno jobs number: {len(jobs)}, job info : {','.join( [str(job.id)  for job in jobs])}")
 
         return jobs
 
-    def mq_fetch_suno(self, db=next(get_db())):
-        stmt = select(SunoJobs).where(
+    @classmethod
+    def mq_fetch_suno(cls):
+        # stmt = select(SunoJobs).where(
+        #     SunoJobs.job_type == SunoJobTypeEnum.MUSIC.value,
+        #     not_(SunoJobs.status.in_(
+        #         [ClipStatusEnum.COMPLETE.value, ClipStatusEnum.ERROR.value])),
+        #     SunoJobs.account == config.SUNO_ACCOUNT
+        # ).limit(20)
+        # jobs = db.execute(stmt).scalars().all()
+
+
+        jobs = db.session.query(SunoJobs).filter(
             SunoJobs.job_type == SunoJobTypeEnum.MUSIC.value,
             not_(SunoJobs.status.in_(
                 [ClipStatusEnum.COMPLETE.value, ClipStatusEnum.ERROR.value])),
             SunoJobs.account == config.SUNO_ACCOUNT
-        ).limit(20)
-        jobs = db.execute(stmt).scalars().all()
+        ).limit(20).all()
 
         if not jobs:
             return []
@@ -108,6 +137,6 @@ class MusicService:
                 db_clip.response = clip.to_json()
                 # if clip.status in [ClipStatusEnum.COMPLETE,ClipStatusEnum.ERROR]:
                 db_clip.status = clip.status.value
-                db.add(db_clip)
-            db.commit()
+                db.session.add(db_clip)
+            db.session.commit()
         return jobs

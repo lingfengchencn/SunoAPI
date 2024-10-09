@@ -1,6 +1,4 @@
 import asyncio
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
 from configs import config
 import pika
 
@@ -79,16 +77,24 @@ class RabbitMQ:
         if self.public_music_connection and not self.public_music_connection.is_closed:
             self.public_music_connection.close()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # On startup
+# @asynccontextmanager
+# def lifespan(app):
+#     # On startup
+#     from services.mq_service import MQSerivce
+#     loop = asyncio.get_event_loop()
+#     asyncio.ensure_future(loop.run_in_executor(None, MQSerivce.consume))
+#     yield
+#     loop.stop()
+#     # app.router.lifespan_context = lifespan
+
+
+def init_mq(app):
     from services.mq_service import MQSerivce
-    service = MQSerivce()
-    
+    # 在此处启动你的 MQService
     loop = asyncio.get_event_loop()
+    service = MQSerivce()
+    # 将任务放入事件循环
     asyncio.ensure_future(loop.run_in_executor(None, service.consume))
-    yield
-    loop.stop()
-    # app.router.lifespan_context = lifespan
+
 
 rabbitmq = RabbitMQ()
