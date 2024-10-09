@@ -1,5 +1,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+import functools
+import threading
 import time
 import json
 
@@ -14,7 +16,14 @@ from services.music_service import MusicService
 from suno.entities import ClipStatusEnum
 from suno.exceptions import ReachedMaxJobsException, TooManyRequestsException
 logger = logging.getLogger(__name__)
+from flask import current_app
 
+def ack_message(ch, delivery_tag):
+    if ch.is_open:
+        ch.basic_ack(delivery_tag)
+def nack_message(ch, delivery_tag,requeue):
+    if ch.is_open:
+        ch.basic_nack(delivery_tag,requeue)
 
 class MQSerivce():
 
@@ -33,7 +42,7 @@ class MQSerivce():
             loop.run_forever()
 
     @staticmethod
-    def gen_lyrics(ch, method, properties, body):
+    def gen_lyrics(ch, delivery_tag, body):
         from services.lyrics_service import LyricsService
         service = LyricsService()
         data = json.loads(body)
@@ -71,15 +80,17 @@ class MQSerivce():
                 routing_key=config.RABBITMQ_PUBLIC_QUEUE,
                 body=data)
             # 任务成功，发送ack
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+            cb = functools.partial(ack_message, ch, delivery_tag)
+            ch.connection.add_callback_threadsafe(cb)
 
         else:
             # 任务失败，重试
             logger.debug('MQService: Received unknown request')
-            ch.basic_nack(delivery_tag=method.delivery_tag)
+            cb = functools.partial(nack_message, ch, delivery_tag, requeue=True)
+            ch.connection.add_callback_threadsafe(cb)
 
     @staticmethod
-    def gen_music(ch, method, properties, body):
+    def gen_music(ch, delivery_tag, body):
         service = MusicService()
         data = json.loads(body)
         request = data.get("prompt")
@@ -93,7 +104,8 @@ class MQSerivce():
 
         if len(running_jobs) >= config.SUNO_MAX_RUNNING_JOBS:
             logger.debug('MQService: Reached max running jobs')
-            ch.basic_nack(delivery_tag=method.delivery_tag)
+            cb = functools.partial(nack_message, ch, delivery_tag, requeue=True)
+            ch.connection.add_callback_threadsafe(cb)
             raise ReachedMaxJobsException("Reached max running jobs")
 
         jobs = MusicService.create(request)
@@ -112,39 +124,46 @@ class MQSerivce():
             )
         # 任务成功，返回ack
         logger.info(f"任务添加成功，id={id} ,type={task_type}")
-        ch.basic_ack(delivery_tag=method.delivery_tag)
-        # except Exception as ex:
-        #     logger.error(f"任务添加失败，id={id} ,type={task_type} ,ex={str(ex)}")
-        #     time.sleep(5)  # 失败稍等在执行
-        #     ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+        cb = functools.partial(ack_message, ch, delivery_tag)
+        ch.connection.add_callback_threadsafe(cb)
 
 
     def _start_consume(self):
         self.consume_channel = rabbitmq.get_consume_channel()
-        def callback(ch, method, properties, body):
+        def do_work(ch, delivery_tag, body):
             logger.info(f"Received message: {body}")
             data = json.loads(body)
             task_type = data.get('type', 'lyrics')
+            
+            cb = functools.partial(nack_message, ch, delivery_tag, requeue=True)
             try:
-                if task_type == 'lyrics':
-                    MQSerivce.gen_lyrics(ch, method, properties, body)
-                else:
-                    MQSerivce.gen_music(ch, method, properties, body)
+                from extentions.ext_app import app
+                with app.app_context():
+                    if task_type == 'lyrics':
+                        MQSerivce.gen_lyrics(ch, delivery_tag, body)
+                    else:
+                        MQSerivce.gen_music(ch, delivery_tag, body)
             except TooManyRequestsException:
                 logger.error("Too many requests, retrying...")
                 time.sleep(5)
-                ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+                ch.connection.add_callback_threadsafe(cb)
             except ReachedMaxJobsException as ex:
                 logger.error(f"Reached max running jobs, retrying...")
                 time.sleep(20)
-                ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+                ch.connection.add_callback_threadsafe(cb)
                 
-            
+        def on_message(ch, method_frame, _header_frame, body, args):
+            _,thrds = args
+            delivery_tag = method_frame.delivery_tag
+            t = threading.Thread(target=do_work, args=(ch, delivery_tag, body))
+            t.start()
+            thrds.append(t)
 
-
+        threads = []
+        on_message_callback = functools.partial(on_message, args=(rabbitmq.consume_connection, threads))
         self.consume_channel.basic_qos(prefetch_count=config.SUNO_MAX_RUNNING_JOBS)
         self.consume_channel.basic_consume(queue=config.RABBITMQ_CONSUME_QUEUE,
-                                           on_message_callback=callback,
+                                           on_message_callback=on_message_callback,
                                            auto_ack=False,
                                            consumer_tag=config.RABBITMQ_CONSUME_TAG)
         self.consume_channel.start_consuming()
@@ -153,12 +172,9 @@ class MQSerivce():
     def start_consuming(self):
         logger.info("MQService: Start consuming")
         # self.consume_channel = rabbitmq.get_consume_channel()
-        from extentions.ext_app import app
         while True:
             # try:
-
-            with app.app_context():
-                self._start_consume()
+            self._start_consume()
             # except Exception as ex:
             #     logger.error(f"MQService: Consume error: {str(ex)}")
             #     time.sleep(5)
