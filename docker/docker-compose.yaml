@@ -20,6 +20,14 @@ x-env: &api-env
   # data base info 
   DB_URL: ${DB_URL:-postgresql://*:*@*:*/*}
 
+  DB_HOST: ${DB_HOST:-localhost}
+  DB_USERNAME: ${DB_USERNAME:-root}
+  DB_PASSWORD: ${DB_PASSWORD:-password}
+  DB_PORT: ${DB_PORT:-5432}
+  DB_DATABASE:  ${DB_DATABASE:-sunoapi_dev}
+  SQLALCHEMY_ECHO: ${SQLALCHEMY_ECHO:-false}
+  DB_OUT_PORT: ${DB_OUT_PORT:-DB_OUT_PORT}
+
   # QUEUE INFO
   RABBITMQ_CONSUME_HOST: ${RABBITMQ_CONSUME_HOST:-localhost}
   RABBITMQ_CONSUME_PORT: ${RABBITMQ_CONSUME_PORT:-5672}
@@ -47,8 +55,8 @@ services:
     build: 
       context: ../
       dockerfile: Dockerfile
-    image: sunoapi:5.22.3_fix9
-    # image: registry.cn-shanghai.aliyuncs.com/miaocode/sunoapi:5.22.3_fix9
+    image: sunoapi:5.22.3_fix12
+    # image: registry.cn-shanghai.aliyuncs.com/miaocode/sunoapi:5.22.3_fix10
     environment:
       <<: *api-env
     extra_hosts:
